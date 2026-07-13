@@ -9,7 +9,8 @@ Line Tools (no Xcode required).
 - **Notch shell** — hover or click the notch to expand a dashboard; collapses
   back to the exact notch footprint. Works on notchless displays with a
   simulated notch.
-- **Media** — Spotify & Apple Music: album art, animated equalizer, scrub,
+- **Media** — Spotify, Apple Music, and anything else (browsers/YouTube, VLC, …)
+  via the system now-playing session: album art, animated equalizer, scrub,
   play/pause/next/previous. Now-playing live activity beside the notch.
 - **Volume/brightness HUD** — level changes render beside the notch. Optional
   experimental suppression of Apple's bezel (Settings).
@@ -21,6 +22,9 @@ Line Tools (no Xcode required).
   detection (Zoom/Meet/Teams/Webex) with a Join button.
 - **Settings** — menu-bar icon → Settings: per-module toggles, launch at
   login.
+
+Browser/system media uses the vendored [mediaremote-adapter](Vendor/mediaremote-adapter)
+(BSD-3) hosted by /usr/bin/perl to pass the MediaRemote entitlement gate.
 
 Planned: widget dashboard (weather, quick toggles, profiles), system monitor,
 Pomodoro, Reminders tasks, notes (Phase 2); notifications strip, translation,
