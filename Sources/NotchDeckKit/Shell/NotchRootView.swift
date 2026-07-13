@@ -4,21 +4,33 @@ import UniformTypeIdentifiers
 /// All concrete modules, so views can reach typed controllers.
 @MainActor
 struct ModuleSet {
+    let dashboard: DashboardModule
     let media: MediaModule
     let hud: HUDModule
     let drop: DropModule
     let bluetooth: BluetoothModule
     let calendar: CalendarModule
+    let system: SystemMonitorModule
+    let pomodoro: PomodoroModule
+    let tasks: TasksModule
+    let notes: NotesModule
 
     init(settings: SettingsStore) {
+        dashboard = DashboardModule()
         media = MediaModule()
         hud = HUDModule(settings: settings)
         drop = DropModule()
         bluetooth = BluetoothModule()
         calendar = CalendarModule()
+        system = SystemMonitorModule()
+        pomodoro = PomodoroModule()
+        tasks = TasksModule()
+        notes = NotesModule()
     }
 
-    var all: [any NotchModule] { [media, calendar, drop, bluetooth, hud] }
+    var all: [any NotchModule] {
+        [dashboard, media, calendar, tasks, notes, pomodoro, system, drop, bluetooth, hud]
+    }
 }
 
 struct NotchRootView: View {
@@ -56,6 +68,7 @@ struct CollapsedStripView: View {
     @ObservedObject private var media: MediaController
     @ObservedObject private var calendarSource: CalendarSource
     @ObservedObject private var bluetooth: BluetoothModule
+    @ObservedObject private var pomodoro: PomodoroModule
 
     init(vm: NotchViewModel, registry: ModuleRegistry, modules: ModuleSet) {
         self.vm = vm
@@ -65,6 +78,7 @@ struct CollapsedStripView: View {
         self.media = modules.media.controller
         self.calendarSource = modules.calendar.source
         self.bluetooth = modules.bluetooth
+        self.pomodoro = modules.pomodoro
     }
 
     static let extensionWidth: CGFloat = 120
@@ -110,6 +124,10 @@ struct CollapsedStripView: View {
         if hud.event != nil, registry.enabledIDs.contains(modules.hud.id) {
             return AnyView(HUDLiveView(controller: hud))
         }
+        if registry.enabledIDs.contains(modules.pomodoro.id),
+           let pomodoro = modules.pomodoro.liveActivityView() {
+            return pomodoro
+        }
         if registry.enabledIDs.contains(modules.calendar.id),
            let cal = modules.calendar.liveActivityView() {
             return cal
@@ -133,6 +151,10 @@ struct ExpandedView: View {
         let panelModules = registry.panelModules
         let selectedID = vm.selectedModuleID ?? panelModules.first?.id
         let sideWidth = (vm.expandedSize.width - vm.notchSize.width) / 2
+        // Tabs flow around the physical notch: first half left, rest right.
+        let splitIndex = (panelModules.count + 1) / 2
+        let leftTabs = Array(panelModules.prefix(splitIndex))
+        let rightTabs = Array(panelModules.dropFirst(splitIndex))
 
         NotchShape(topRadius: 8, bottomRadius: 22)
             .fill(Color.black)
@@ -141,8 +163,8 @@ struct ExpandedView: View {
                 VStack(spacing: 4) {
                     // Header row flanks the physical notch.
                     HStack(spacing: 0) {
-                        HStack(spacing: 10) {
-                            ForEach(panelModules, id: \.id) { module in
+                        HStack(spacing: 7) {
+                            ForEach(leftTabs, id: \.id) { module in
                                 TabButton(
                                     icon: module.icon,
                                     isSelected: module.id == selectedID
@@ -152,7 +174,13 @@ struct ExpandedView: View {
                         .frame(width: sideWidth, alignment: .leading)
                         .padding(.leading, 4)
                         Color.clear.frame(width: vm.notchSize.width)
-                        HStack(spacing: 10) {
+                        HStack(spacing: 7) {
+                            ForEach(rightTabs, id: \.id) { module in
+                                TabButton(
+                                    icon: module.icon,
+                                    isSelected: module.id == selectedID
+                                ) { vm.selectedModuleID = module.id }
+                            }
                             Spacer()
                             Button {
                                 SettingsWindowController.shared.show(registry: registry, settings: registry.settings)

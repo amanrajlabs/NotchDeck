@@ -28,5 +28,7 @@
 	<string>NotchDeck controls Spotify and Apple Music playback from the notch.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>NotchDeck shows battery levels of your Bluetooth devices.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>NotchDeck shows and adds tasks from your Reminders.</string>
 </dict>
 </plist>

@@ -140,33 +140,52 @@ struct ArtworkView: View {
     }
 }
 
-/// Four animated bars shown while music plays.
+/// Four animated bars shown while music plays. The animated variant exists
+/// only while playing — a lingering repeatForever animation otherwise keeps
+/// SwiftUI re-rendering every frame at idle.
 struct EqualizerBars: View {
     let isPlaying: Bool
-    @State private var animating = false
 
-    private static let phases: [Double] = [0.9, 0.5, 1.0, 0.65]
+    static let phases: [Double] = [0.9, 0.5, 1.0, 0.65]
 
     var body: some View {
-        HStack(spacing: 2) {
-            ForEach(0..<4, id: \.self) { i in
-                Capsule()
-                    .fill(Color.green)
-                    .frame(maxHeight: .infinity)
-                    .scaleEffect(
-                        y: animating ? Self.phases[i] : 0.25,
-                        anchor: .bottom
-                    )
-                    .animation(
-                        isPlaying
-                            ? .easeInOut(duration: 0.45 + Double(i) * 0.1).repeatForever(autoreverses: true)
-                            : .default,
-                        value: animating
-                    )
+        if isPlaying {
+            AnimatedEqualizerBars()
+        } else {
+            HStack(spacing: 2) {
+                ForEach(0..<4, id: \.self) { _ in
+                    Capsule()
+                        .fill(Color.green.opacity(0.7))
+                        .frame(maxHeight: .infinity)
+                        .scaleEffect(y: 0.25, anchor: .bottom)
+                }
             }
         }
-        .onAppear { animating = isPlaying }
-        .onChange(of: isPlaying) { _, playing in animating = playing }
+    }
+}
+
+/// Rate-capped timeline (~8 fps) instead of repeatForever: a repeatForever
+/// animation ticks the whole hosting view at display refresh (120 Hz here)
+/// and costs ~9% CPU; this stays under 1%.
+private struct AnimatedEqualizerBars: View {
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 0.12)) { context in
+            let t = context.date.timeIntervalSinceReferenceDate
+            HStack(spacing: 2) {
+                ForEach(0..<4, id: \.self) { i in
+                    Capsule()
+                        .fill(Color.green)
+                        .frame(maxHeight: .infinity)
+                        .scaleEffect(y: Self.level(bar: i, at: t), anchor: .bottom)
+                }
+            }
+        }
+    }
+
+    /// Layered per-bar sines for organic motion, in 0.25...1.0.
+    static func level(bar: Int, at t: Double) -> Double {
+        let wave = 0.5 + 0.5 * sin(t * (2.2 + Double(bar) * 0.35) + Double(bar) * 1.7)
+        return 0.25 + 0.75 * wave
     }
 }
 

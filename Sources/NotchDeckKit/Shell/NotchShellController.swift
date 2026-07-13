@@ -40,6 +40,7 @@ final class NotchShellController {
 
         let modules = ModuleSet(settings: settings)
         moduleSet = modules
+        modules.dashboard.registry = registry
         registry.register(modules.all)
 
         let panel = NotchPanel(frame: stripFrame)

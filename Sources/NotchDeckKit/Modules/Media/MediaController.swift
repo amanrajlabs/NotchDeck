@@ -90,8 +90,16 @@ final class MediaController: ObservableObject {
     @Published var position: TimeInterval = 0
     /// Views set this so position polling only runs while visible.
     @Published var isPanelVisible = false {
-        didSet { updatePositionTimer() }
+        didSet {
+            if isPanelVisible, track?.player == .system {
+                position = lastSystemElapsed
+            }
+            updatePositionTimer()
+        }
     }
+
+    /// Latest elapsed from the system stream, staged without publishing.
+    private var lastSystemElapsed: TimeInterval = 0
 
     private var observers: [NSObjectProtocol] = []
     private var positionTimer: Timer?
@@ -225,8 +233,16 @@ final class MediaController: ObservableObject {
             player: .system, appName: appName
         )
         let trackChanged = info.title != track?.title || track?.player != .system
-        track = info
-        position = state.elapsed
+        // The stream fires several times a second during playback; every
+        // @Published write re-renders every observing view, so only publish
+        // real changes.
+        if track != info { track = info }
+        lastSystemElapsed = state.elapsed
+        // position matters only while the scrubber is on screen; publishing
+        // it while collapsed re-renders the strip for nothing.
+        if trackChanged || isPanelVisible {
+            position = state.elapsed
+        }
         if trackChanged { artwork = nil }
         if let b64 = state.artworkBase64, let data = Data(base64Encoded: b64) {
             artwork = NSImage(data: data)

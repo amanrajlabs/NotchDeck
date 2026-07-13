@@ -230,6 +230,53 @@ if let result = acc.ingest(line: cleared) {
     expect(false, "empty payload should still be a data line")
 }
 
+// MARK: - WeatherParser
+
+let weatherJSON = """
+{"current":{"temperature_2m":21.4,"weather_code":61},
+ "daily":{"temperature_2m_max":[27.1],"temperature_2m_min":[17.9]}}
+""".data(using: .utf8)!
+if let w = WeatherParser.parse(data: weatherJSON) {
+    expect(w.tempC == 21.4 && w.code == 61, "weather current parsed")
+    expect(w.hiC == 27.1 && w.loC == 17.9, "weather daily hi/lo parsed")
+} else {
+    expect(false, "weather payload not parsed")
+}
+expect(WeatherParser.parse(data: Data("{}".utf8)) == nil, "weather empty JSON → nil")
+expect(WeatherParser.symbol(for: 0) == "sun.max.fill", "WMO clear symbol")
+expect(WeatherParser.symbol(for: 63) == "cloud.rain.fill", "WMO rain symbol")
+expect(WeatherParser.symbol(for: 73) == "cloud.snow.fill", "WMO snow symbol")
+expect(WeatherParser.symbol(for: 96) == "cloud.bolt.rain.fill", "WMO storm symbol")
+
+// MARK: - SystemStatsMath
+
+let prev = CPUSample(user: 100, system: 50, idle: 800, nice: 0)
+let curr = CPUSample(user: 130, system: 70, idle: 850, nice: 0)
+expect(SystemStatsMath.cpuUsage(previous: prev, current: curr) == 0.5, "cpu 50% busy")
+expect(SystemStatsMath.cpuUsage(previous: prev, current: prev) == 0, "cpu no delta → 0")
+
+// MARK: - PomodoroEngine
+
+var pomodoro = PomodoroEngine(workMinutes: 25, breakMinutes: 5)
+let t0 = Date(timeIntervalSince1970: 1_000_000)
+expect(!pomodoro.isRunning, "pomodoro starts stopped")
+expect(pomodoro.remaining(at: t0) == 25 * 60, "full work duration when stopped")
+pomodoro.start(at: t0)
+expect(pomodoro.remaining(at: t0.addingTimeInterval(60)) == 24 * 60, "counts down while running")
+pomodoro.pause(at: t0.addingTimeInterval(60))
+expect(pomodoro.remaining(at: t0.addingTimeInterval(600)) == 24 * 60, "paused holds remaining")
+pomodoro.start(at: t0.addingTimeInterval(600))
+expect(pomodoro.advanceIfElapsed(at: t0.addingTimeInterval(700)) == nil, "no phase change early")
+let workEnd = t0.addingTimeInterval(600 + 24 * 60)
+expect(pomodoro.advanceIfElapsed(at: workEnd) == .work, "work phase completes")
+expect(pomodoro.phase == .shortBreak, "break follows work")
+expect(pomodoro.completedSessions == 1, "session counted")
+expect(pomodoro.remaining(at: workEnd) == 5 * 60, "break duration fresh")
+expect(pomodoro.advanceIfElapsed(at: workEnd.addingTimeInterval(5 * 60)) == .shortBreak, "break completes")
+expect(pomodoro.phase == .work, "work follows break")
+pomodoro.reset()
+expect(!pomodoro.isRunning && pomodoro.phase == .work, "reset returns to idle work")
+
 // MARK: - Summary
 
 if failures == 0 {

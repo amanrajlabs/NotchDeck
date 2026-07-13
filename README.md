@@ -51,7 +51,7 @@ Notifications. The app is ad-hoc signed; grants persist per build signature.
 ## Efficiency
 
 Event-driven throughout — no polling while collapsed except a 0.5 s brightness
-diff (HUD module only). Measured idle: ~0.1% CPU, ~42 MB RSS.
+diff (HUD module only). Measured: ~0% CPU idle, ~1% while music plays (equalizer animating), ~45 MB RSS.
 
 ## Requirements
 
