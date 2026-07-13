@@ -171,6 +171,9 @@ struct ExpandedView: View {
                 VStack(spacing: 4) {
                     // Header row flanks the physical notch.
                     HStack(spacing: 0) {
+                        // Paddings live INSIDE the fixed side widths — the
+                        // three columns must sum to exactly the panel width
+                        // or the outermost symbols clip off the shape.
                         HStack(spacing: 5) {
                             ForEach(leftTabs, id: \.id) { module in
                                 TabButton(
@@ -179,9 +182,10 @@ struct ExpandedView: View {
                                     isSelected: module.id == selectedID
                                 ) { vm.selectedModuleID = module.id }
                             }
+                            Spacer(minLength: 0)
                         }
+                        .padding(.leading, 10)
                         .frame(width: sideWidth, alignment: .leading)
-                        .padding(.leading, 4)
                         Color.clear.frame(width: vm.notchSize.width)
                         HStack(spacing: 5) {
                             ForEach(rightTabs, id: \.id) { module in
@@ -191,7 +195,7 @@ struct ExpandedView: View {
                                     isSelected: module.id == selectedID
                                 ) { vm.selectedModuleID = module.id }
                             }
-                            Spacer()
+                            Spacer(minLength: 0)
                             Button {
                                 SettingsWindowController.shared.show()
                             } label: {
@@ -200,8 +204,8 @@ struct ExpandedView: View {
                             }
                             .buttonStyle(.plain)
                         }
-                        .frame(width: sideWidth, alignment: .trailing)
                         .padding(.trailing, 12)
+                        .frame(width: sideWidth, alignment: .trailing)
                     }
                     .frame(height: max(vm.notchSize.height, 30))
 
