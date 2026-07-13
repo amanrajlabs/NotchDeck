@@ -34,7 +34,7 @@ final class BluetoothModule: NotchModule, ObservableObject {
 
     func refresh() {
         let scanned = BTBatteryScanner.scan()
-        devices = scanned
+        if devices != scanned { devices = scanned }
         notifyLowBatteries(scanned)
     }
 

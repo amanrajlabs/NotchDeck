@@ -48,6 +48,8 @@ enum NotificationsDB {
     enum ReadResult {
         case ok([NotificationItem])
         case needsFullDiskAccess
+        /// Opened fine but the schema differs (macOS change).
+        case unsupportedSchema
     }
 
     static var dbPath: String {
@@ -56,14 +58,15 @@ enum NotificationsDB {
 
     static func recent(limit: Int = 30) -> ReadResult {
         var db: OpaquePointer?
-        // Immutable open: never writes, tolerates the live WAL.
-        let uri = "file:\(dbPath)?immutable=1"
-        guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK,
+        // WAL databases support concurrent readers; a plain read-only open
+        // plus a busy timeout is safer than immutable=1 against a live db.
+        guard sqlite3_open_v2(dbPath, &db, SQLITE_OPEN_READONLY, nil) == SQLITE_OK,
               let db else {
             sqlite3_close(db)
             return .needsFullDiskAccess
         }
         defer { sqlite3_close(db) }
+        sqlite3_busy_timeout(db, 250)
 
         let sql = """
         SELECT app.identifier, hex(record.uuid), record.data, record.delivered_date
@@ -73,7 +76,7 @@ enum NotificationsDB {
         """
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
-            return .needsFullDiskAccess
+            return .unsupportedSchema
         }
         defer { sqlite3_finalize(statement) }
         sqlite3_bind_int(statement, 1, Int32(limit))
@@ -111,6 +114,7 @@ final class NotificationsModule: NotchModule, ObservableObject {
 
     @Published private(set) var items: [NotificationItem] = []
     @Published private(set) var needsAccess = false
+    @Published private(set) var unsupported = false
     private var timer: Timer?
 
     func activate() {
@@ -137,10 +141,13 @@ final class NotificationsModule: NotchModule, ObservableObject {
                 guard let self = NotificationsModuleShared.instance else { return }
                 switch result {
                 case .ok(let items):
-                    self.needsAccess = false
-                    self.items = items
+                    if self.needsAccess { self.needsAccess = false }
+                    if self.unsupported { self.unsupported = false }
+                    if self.items != items { self.items = items }
                 case .needsFullDiskAccess:
-                    self.needsAccess = true
+                    if !self.needsAccess { self.needsAccess = true }
+                case .unsupportedSchema:
+                    if !self.unsupported { self.unsupported = true }
                 }
             }
         }
@@ -164,16 +171,26 @@ struct NotificationsPanelView: View {
     var body: some View {
         Group {
             if module.needsAccess {
-                VStack(spacing: 10) {
+                VStack(spacing: 8) {
                     Image(systemName: "bell.slash.fill")
                         .font(.system(size: 28)).foregroundStyle(.secondary)
                     Text("Reading notifications needs Full Disk Access")
                         .font(.caption).foregroundStyle(.secondary)
+                    Text("Enable NotchDeck there, then relaunch the app")
+                        .font(.system(size: 10)).foregroundStyle(.tertiary)
                     Button("Open Privacy Settings") {
                         NSWorkspace.shared.open(
                             URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!
                         )
                     }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if module.unsupported {
+                VStack(spacing: 8) {
+                    Image(systemName: "bell.slash.fill")
+                        .font(.system(size: 28)).foregroundStyle(.secondary)
+                    Text("Notification store format isn't supported on this macOS version")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if module.items.isEmpty {

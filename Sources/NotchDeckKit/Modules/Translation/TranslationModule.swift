@@ -183,6 +183,21 @@ struct TranslationPanelView: View {
                     }
                 }
                 .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.06)))
+                .overlay(alignment: .bottomTrailing) {
+                    if !module.translatedText.isEmpty {
+                        Button {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(module.translatedText, forType: .string)
+                        } label: {
+                            Image(systemName: "doc.on.doc")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(6)
+                        .help("Copy translation")
+                    }
+                }
             }
         }
     }

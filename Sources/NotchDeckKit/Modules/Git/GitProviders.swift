@@ -267,9 +267,11 @@ struct GitPanelView: View {
                 }
             }
             if let status = module.statusMessage, module.pullRequests.isEmpty {
-                Text(status)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: 8) {
+                    Text(status).foregroundStyle(.secondary)
+                    if !module.hasAnyToken { OpenSettingsButton() }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
                     VStack(spacing: 6) {

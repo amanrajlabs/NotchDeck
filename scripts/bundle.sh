@@ -31,5 +31,13 @@ clang -dynamiclib -fobjc-arc -fmodules -arch arm64 \
 cp "$ADAPTER_SRC/bin/mediaremote-adapter.pl" "$APP/Contents/Resources/"
 codesign --force --sign - "$FRAMEWORK_DIR/MediaRemoteAdapter"
 
+# App icon (generated, cached)
+if [ ! -f dist/AppIcon.icns ]; then
+    swift scripts/make-icon.swift dist/AppIcon.iconset
+    iconutil -c icns dist/AppIcon.iconset -o dist/AppIcon.icns
+    rm -rf dist/AppIcon.iconset
+fi
+cp dist/AppIcon.icns "$APP/Contents/Resources/"
+
 codesign --force --deep --sign - "$APP"
 echo "Built $APP"

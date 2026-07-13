@@ -175,6 +175,7 @@ struct ExpandedView: View {
                             ForEach(leftTabs, id: \.id) { module in
                                 TabButton(
                                     icon: module.icon,
+                                    name: module.name,
                                     isSelected: module.id == selectedID
                                 ) { vm.selectedModuleID = module.id }
                             }
@@ -186,12 +187,13 @@ struct ExpandedView: View {
                             ForEach(rightTabs, id: \.id) { module in
                                 TabButton(
                                     icon: module.icon,
+                                    name: module.name,
                                     isSelected: module.id == selectedID
                                 ) { vm.selectedModuleID = module.id }
                             }
                             Spacer()
                             Button {
-                                SettingsWindowController.shared.show(registry: registry, settings: registry.settings)
+                                SettingsWindowController.shared.show()
                             } label: {
                                 Image(systemName: "gearshape.fill")
                                     .foregroundStyle(.secondary)
@@ -224,21 +226,27 @@ struct ExpandedView: View {
 
 struct TabButton: View {
     let icon: String
+    var name = ""
     let isSelected: Bool
     let action: () -> Void
+    @State private var hovering = false
 
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(isSelected ? .white : Color.white.opacity(0.45))
+                .foregroundStyle(isSelected ? .white : Color.white.opacity(hovering ? 0.8 : 0.45))
                 .frame(width: 24, height: 22)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(isSelected ? Color.white.opacity(0.15) : .clear)
+                        .fill(isSelected
+                            ? Color.white.opacity(0.15)
+                            : Color.white.opacity(hovering ? 0.08 : 0))
                 )
         }
         .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .help(name)
     }
 }
 

@@ -14,7 +14,10 @@ final class DropModule: NotchModule, ObservableObject {
     @Published var statusMessage: String?
     private var statusTask: Task<Void, Never>?
 
-    func activate() {}
+    func activate() {
+        DropModuleShared.instance = self
+    }
+
     func deactivate() {
         pendingFiles = []
         statusMessage = nil
@@ -45,35 +48,54 @@ final class DropModule: NotchModule, ObservableObject {
                 showStatus("AirDrop unavailable")
             }
         case .zip:
-            do {
+            runOffMain("Zipping…") {
                 let archive = try DropActionRunner.zip(urls)
-                showStatus("Zipped → \(archive.lastPathComponent)")
-                clearPending()
-            } catch { showStatus(error.localizedDescription) }
+                return "Zipped → \(archive.lastPathComponent)"
+            }
         case .convert(let format):
-            do {
+            runOffMain("Converting…") {
                 for url in urls {
                     _ = try DropActionRunner.convert(url, to: format)
                 }
-                showStatus("Converted to \(format.rawValue.uppercased())")
-                clearPending()
-            } catch { showStatus(error.localizedDescription) }
+                return "Converted to \(format.rawValue.uppercased())"
+            }
         case .move, .copy:
             chooseFolder { [weak self] folder in
                 guard let self, let folder else { return }
-                do {
-                    if case .move = action {
+                let isMove = action == .move
+                self.runOffMain(isMove ? "Moving…" : "Copying…") {
+                    if isMove {
                         try DropActionRunner.move(urls, to: folder)
-                        self.showStatus("Moved to \(folder.lastPathComponent)")
+                        return "Moved to \(folder.lastPathComponent)"
                     } else {
                         try DropActionRunner.copy(urls, to: folder)
-                        self.showStatus("Copied to \(folder.lastPathComponent)")
+                        return "Copied to \(folder.lastPathComponent)"
                     }
-                    self.clearPending()
-                } catch { self.showStatus(error.localizedDescription) }
+                }
             }
         case .openWith:
             openWithMenu(urls: urls)
+        }
+    }
+
+    /// File ops can be slow (zipping a folder); never block the UI thread.
+    private func runOffMain(
+        _ progressMessage: String,
+        _ work: @escaping @Sendable () throws -> String
+    ) {
+        showStatus(progressMessage)
+        Task.detached(priority: .userInitiated) {
+            let outcome: String
+            do {
+                outcome = try work()
+            } catch {
+                outcome = error.localizedDescription
+            }
+            await MainActor.run {
+                guard let self = DropModuleShared.instance else { return }
+                self.showStatus(outcome)
+                self.clearPending()
+            }
         }
     }
 
@@ -264,4 +286,9 @@ struct DropTile: View {
             return true
         }
     }
+}
+
+@MainActor
+enum DropModuleShared {
+    weak static var instance: DropModule?
 }

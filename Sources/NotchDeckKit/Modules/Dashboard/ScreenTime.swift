@@ -130,7 +130,10 @@ final class AppUsageTracker: ObservableObject {
     }
 
     private func persistNow() {
-        if let data = try? JSONEncoder().encode(ledger.days) {
+        // Keep the file bounded: day keys sort lexicographically.
+        let keep = Set(ledger.days.keys.sorted().suffix(30))
+        let bounded = ledger.days.filter { keep.contains($0.key) }
+        if let data = try? JSONEncoder().encode(bounded) {
             try? data.write(to: Self.fileURL, options: .atomic)
         }
     }

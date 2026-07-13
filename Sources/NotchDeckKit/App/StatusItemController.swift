@@ -28,6 +28,6 @@ final class StatusItemController: NSObject {
     }
 
     @objc private func openSettings() {
-        SettingsWindowController.shared.show(registry: registry, settings: settings)
+        SettingsWindowController.shared.show()
     }
 }

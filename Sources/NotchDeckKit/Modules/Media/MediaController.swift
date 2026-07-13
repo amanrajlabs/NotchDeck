@@ -100,6 +100,7 @@ final class MediaController: ObservableObject {
 
     /// Latest elapsed from the system stream, staged without publishing.
     private var lastSystemElapsed: TimeInterval = 0
+    private var appNameCache: [String: String] = [:]
 
     private var observers: [NSObjectProtocol] = []
     private var positionTimer: Timer?
@@ -223,9 +224,12 @@ final class MediaController: ObservableObject {
            PlayerApp(rawValue: bundleID) != nil {
             return
         }
-        let appName = state.bundleID.flatMap { id in
-            NSRunningApplication.runningApplications(withBundleIdentifier: id)
+        let appName = state.bundleID.flatMap { id -> String? in
+            if let cached = appNameCache[id] { return cached }
+            let name = NSRunningApplication.runningApplications(withBundleIdentifier: id)
                 .first?.localizedName
+            if let name { appNameCache[id] = name }
+            return name
         }
         let info = TrackInfo(
             title: state.title, artist: state.artist, album: state.album,

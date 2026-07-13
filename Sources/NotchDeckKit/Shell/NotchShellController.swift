@@ -14,6 +14,7 @@ final class NotchShellController {
         var notchRect: CGRect
         var cancellable: AnyCancellable?
         var shrinkTask: Task<Void, Never>?
+        var keyObserver: NSObjectProtocol?
     }
 
     private let registry: ModuleRegistry
@@ -49,6 +50,9 @@ final class NotchShellController {
         for entry in screenPanels {
             entry.shrinkTask?.cancel()
             entry.cancellable?.cancel()
+            if let keyObserver = entry.keyObserver {
+                NotificationCenter.default.removeObserver(keyObserver)
+            }
             entry.panel.orderOut(nil)
             entry.panel.contentView = nil
         }
@@ -76,7 +80,7 @@ final class NotchShellController {
         let hosting = HoverHostingView(rootView: root)
         hosting.frame = panel.contentLayoutRect
         hosting.autoresizingMask = [.width, .height]
-        hosting.onHoverChange = { [weak vm] hovering in
+        hosting.onHoverChange = { [weak vm, weak panel] hovering in
             guard let vm else { return }
             if hovering && vm.state == .collapsed {
                 // Only react near the visible strip, not the whole side margin.
@@ -84,11 +88,27 @@ final class NotchShellController {
                 let reach = CollapsedStripView.extensionWidth + 10
                 guard x > notchRect.minX - reach, x < notchRect.maxX + reach else { return }
             }
+            // While the panel is key the user is typing or mid-dialog —
+            // don't yank the panel away under them.
+            if !hovering, panel?.isKeyWindow == true { return }
             vm.setHover(hovering)
         }
         panel.contentView = hosting
 
+        // Collapse once interaction truly ends: key resigned + pointer gone.
+        let keyObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didResignKeyNotification, object: panel, queue: .main
+        ) { [weak vm, weak panel] _ in
+            MainActor.assumeIsolated {
+                guard let vm, let panel, vm.state == .expanded else { return }
+                if !panel.frame.contains(NSEvent.mouseLocation) {
+                    vm.collapse()
+                }
+            }
+        }
+
         var entry = ScreenPanel(panel: panel, vm: vm, notchRect: notchRect)
+        entry.keyObserver = keyObserver
         entry.cancellable = vm.$state
             .removeDuplicates()
             .sink { [weak self, weak panel, weak vm] state in

@@ -12,6 +12,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         let registry = ModuleRegistry(settings: settings)
         let shell = NotchShellController(registry: registry, settings: settings)
         self.shell = shell
+        SettingsWindowController.shared.configure(registry: registry, settings: settings)
         statusItem = StatusItemController(registry: registry, settings: settings)
         shell.show()
     }

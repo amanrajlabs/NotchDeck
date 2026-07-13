@@ -5,11 +5,20 @@ import SwiftUI
 final class SettingsWindowController {
     static let shared = SettingsWindowController()
     private var window: NSWindow?
+    private weak var registry: ModuleRegistry?
+    private weak var settings: SettingsStore?
 
-    func show(registry: ModuleRegistry, settings: SettingsStore) {
+    /// Called once at startup so any view can open Settings without plumbing.
+    func configure(registry: ModuleRegistry, settings: SettingsStore) {
+        self.registry = registry
+        self.settings = settings
+    }
+
+    func show() {
+        guard let registry, let settings else { return }
         if window == nil {
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 440, height: 420),
+                contentRect: NSRect(x: 0, y: 0, width: 460, height: 520),
                 styleMask: [.titled, .closable, .miniaturizable],
                 backing: .buffered,
                 defer: false
@@ -35,8 +44,8 @@ struct SettingsView: View {
         Form {
             Section("General") {
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
-                Toggle("Replace system volume/brightness bezel (experimental)", isOn: $settings.hudSuppressSystemBezel)
                 Toggle("Show on all displays", isOn: $settings.showOnAllDisplays)
+                Toggle("Replace system volume/brightness bezel (experimental)", isOn: $settings.hudSuppressSystemBezel)
             }
             Section("Modules") {
                 ForEach(registry.modules, id: \.id) { module in
@@ -53,6 +62,16 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 440, height: 420)
+        .frame(width: 460, height: 520)
+    }
+}
+
+/// Small "Open Settings" affordance used by module panels that need tokens.
+struct OpenSettingsButton: View {
+    var title = "Open Settings"
+
+    var body: some View {
+        Button(title) { SettingsWindowController.shared.show() }
+            .controlSize(.small)
     }
 }

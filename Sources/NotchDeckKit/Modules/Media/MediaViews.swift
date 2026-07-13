@@ -36,6 +36,8 @@ struct MediaLiveActivityView: View {
 
 struct MediaPanelView: View {
     @ObservedObject var controller: MediaController
+    @State private var scrubValue: Double = 0
+    @State private var isScrubbing = false
 
     var body: some View {
         Group {
@@ -63,7 +65,7 @@ struct MediaPanelView: View {
                         .foregroundStyle(.secondary)
                     Text("Nothing playing")
                         .foregroundStyle(.secondary)
-                    Text("Start Spotify or Apple Music")
+                    Text("Play something in Spotify, Music, or your browser")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
@@ -76,16 +78,27 @@ struct MediaPanelView: View {
 
     private func scrubber(duration: TimeInterval) -> some View {
         VStack(spacing: 2) {
+            // Seek once on release — seeking live during the drag spams
+            // AppleEvents (or helper processes) dozens of times per drag.
             Slider(
                 value: Binding(
-                    get: { min(controller.position, max(duration, 1)) },
-                    set: { controller.seek(to: $0) }
+                    get: { isScrubbing ? scrubValue : min(controller.position, max(duration, 1)) },
+                    set: { scrubValue = $0 }
                 ),
-                in: 0...max(duration, 1)
+                in: 0...max(duration, 1),
+                onEditingChanged: { editing in
+                    if editing {
+                        scrubValue = controller.position
+                        isScrubbing = true
+                    } else {
+                        isScrubbing = false
+                        controller.seek(to: scrubValue)
+                    }
+                }
             )
             .controlSize(.mini)
             HStack {
-                Text(Self.timeString(controller.position))
+                Text(Self.timeString(isScrubbing ? scrubValue : controller.position))
                 Spacer()
                 Text(Self.timeString(duration))
             }
