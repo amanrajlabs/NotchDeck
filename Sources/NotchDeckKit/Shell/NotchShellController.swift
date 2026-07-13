@@ -45,9 +45,19 @@ final class NotchShellController {
         let panel = NotchPanel(frame: stripFrame)
         panel.acceptsMouseMovedEvents = true
         let root = NotchRootView(vm: vm, registry: registry, modules: modules)
-        let hosting = NSHostingView(rootView: root)
+        let hosting = HoverHostingView(rootView: root)
         hosting.frame = panel.contentLayoutRect
         hosting.autoresizingMask = [.width, .height]
+        hosting.onHoverChange = { [weak self] hovering in
+            guard let self, let vm = self.vm else { return }
+            if hovering && vm.state == .collapsed {
+                // Only react near the visible strip, not the whole side margin.
+                let x = NSEvent.mouseLocation.x
+                let reach = CollapsedStripView.extensionWidth + 10
+                guard x > self.notchRect.minX - reach, x < self.notchRect.maxX + reach else { return }
+            }
+            vm.setHover(hovering)
+        }
         panel.contentView = hosting
         self.panel = panel
 

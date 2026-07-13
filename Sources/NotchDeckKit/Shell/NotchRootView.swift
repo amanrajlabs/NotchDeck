@@ -50,16 +50,24 @@ struct CollapsedStripView: View {
     @ObservedObject var vm: NotchViewModel
     @ObservedObject var registry: ModuleRegistry
     let modules: ModuleSet
+    // Observe every controller that can add/remove a live activity, so the
+    // strip re-renders the moment their state changes.
     @ObservedObject private var hud: HUDController
+    @ObservedObject private var media: MediaController
+    @ObservedObject private var calendarSource: CalendarSource
+    @ObservedObject private var bluetooth: BluetoothModule
 
     init(vm: NotchViewModel, registry: ModuleRegistry, modules: ModuleSet) {
         self.vm = vm
         self.registry = registry
         self.modules = modules
         self.hud = modules.hud.controller
+        self.media = modules.media.controller
+        self.calendarSource = modules.calendar.source
+        self.bluetooth = modules.bluetooth
     }
 
-    private static let extensionWidth: CGFloat = 120
+    static let extensionWidth: CGFloat = 120
 
     var body: some View {
         let leading = leadingActivity
