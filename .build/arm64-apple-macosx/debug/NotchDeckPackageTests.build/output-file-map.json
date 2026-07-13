@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckPackageTests.build/primary.swiftdeps"
+  },
+  "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckPackageTests.derived/runner.swift": {
+    "dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckPackageTests.build/runner.d",
+    "object": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckPackageTests.build/runner.swift.o",
+    "swiftmodule": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckPackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckPackageTests.build/runner.swiftdeps",
+    "diagnostics": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckPackageTests.build/runner.dia"
+  }
+}
