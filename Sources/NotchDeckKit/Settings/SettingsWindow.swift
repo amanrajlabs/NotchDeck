@@ -36,6 +36,7 @@ struct SettingsView: View {
             Section("General") {
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
                 Toggle("Replace system volume/brightness bezel (experimental)", isOn: $settings.hudSuppressSystemBezel)
+                Toggle("Show on all displays", isOn: $settings.showOnAllDisplays)
             }
             Section("Modules") {
                 ForEach(registry.modules, id: \.id) { module in

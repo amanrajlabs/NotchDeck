@@ -2,19 +2,24 @@ import AppKit
 import Combine
 import SwiftUI
 
-/// Owns the notch panel: positions it over the notch, resizes it between the
-/// collapsed strip and the expanded dashboard so transparent areas never
-/// swallow clicks meant for other apps.
+/// Owns the notch panels (one per displayed screen): positions them over the
+/// notch (or a simulated one), and resizes them between the collapsed strip
+/// and the expanded dashboard so transparent areas never swallow clicks
+/// meant for other apps.
 @MainActor
 final class NotchShellController {
+    private struct ScreenPanel {
+        let panel: NotchPanel
+        let vm: NotchViewModel
+        var notchRect: CGRect
+        var cancellable: AnyCancellable?
+        var shrinkTask: Task<Void, Never>?
+    }
+
     private let registry: ModuleRegistry
     private let settings: SettingsStore
-    private var panel: NotchPanel?
-    private var vm: NotchViewModel?
     private var moduleSet: ModuleSet?
-    private var cancellables = Set<AnyCancellable>()
-    private var shrinkTask: Task<Void, Never>?
-    private var notchRect: CGRect = .zero
+    private var screenPanels: [ScreenPanel] = []
 
     /// Extra width on each side of the notch reserved for live activities.
     static let stripSideMargin: CGFloat = 150
@@ -26,86 +31,102 @@ final class NotchShellController {
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil, queue: .main
         ) { _ in
-            MainActor.assumeIsolated { NotchShellControllerShared.instance?.repositionPanel() }
+            MainActor.assumeIsolated { NotchShellControllerShared.instance?.rebuildPanels() }
         }
         NotchShellControllerShared.instance = self
+        settings.onDisplayConfigChange = { [weak self] in self?.rebuildPanels() }
     }
 
     func show() {
-        guard let screen = Self.targetScreen() else { return }
-        notchRect = Self.notchRect(for: screen)
-
-        let vm = NotchViewModel(notchSize: notchRect.size)
-        self.vm = vm
-
         let modules = ModuleSet(settings: settings)
         moduleSet = modules
         modules.dashboard.registry = registry
         registry.register(modules.all)
+        rebuildPanels()
+    }
 
-        let panel = NotchPanel(frame: stripFrame)
+    func rebuildPanels() {
+        for entry in screenPanels {
+            entry.shrinkTask?.cancel()
+            entry.cancellable?.cancel()
+            entry.panel.orderOut(nil)
+            entry.panel.contentView = nil
+        }
+        screenPanels = []
+
+        guard let modules = moduleSet else { return }
+        let screens: [NSScreen]
+        if settings.showOnAllDisplays {
+            screens = NSScreen.screens
+        } else {
+            screens = Self.primaryScreen().map { [$0] } ?? []
+        }
+        for screen in screens {
+            addPanel(for: screen, modules: modules)
+        }
+    }
+
+    private func addPanel(for screen: NSScreen, modules: ModuleSet) {
+        let notchRect = Self.notchRect(for: screen)
+        let vm = NotchViewModel(notchSize: notchRect.size)
+
+        let panel = NotchPanel(frame: Self.stripFrame(notch: notchRect))
         panel.acceptsMouseMovedEvents = true
         let root = NotchRootView(vm: vm, registry: registry, modules: modules)
         let hosting = HoverHostingView(rootView: root)
         hosting.frame = panel.contentLayoutRect
         hosting.autoresizingMask = [.width, .height]
-        hosting.onHoverChange = { [weak self] hovering in
-            guard let self, let vm = self.vm else { return }
+        hosting.onHoverChange = { [weak vm] hovering in
+            guard let vm else { return }
             if hovering && vm.state == .collapsed {
                 // Only react near the visible strip, not the whole side margin.
                 let x = NSEvent.mouseLocation.x
                 let reach = CollapsedStripView.extensionWidth + 10
-                guard x > self.notchRect.minX - reach, x < self.notchRect.maxX + reach else { return }
+                guard x > notchRect.minX - reach, x < notchRect.maxX + reach else { return }
             }
             vm.setHover(hovering)
         }
         panel.contentView = hosting
-        self.panel = panel
 
-        vm.$state
+        var entry = ScreenPanel(panel: panel, vm: vm, notchRect: notchRect)
+        entry.cancellable = vm.$state
             .removeDuplicates()
-            .sink { [weak self] state in
-                guard let self else { return }
-                self.shrinkTask?.cancel()
+            .sink { [weak self, weak panel, weak vm] state in
+                guard let self, let panel, let vm else { return }
+                guard let index = self.screenPanels.firstIndex(where: { $0.panel === panel })
+                else { return }
+                self.screenPanels[index].shrinkTask?.cancel()
+                let notch = self.screenPanels[index].notchRect
                 switch state {
                 case .expanded:
-                    self.panel?.setFrame(self.expandedFrame, display: true)
+                    panel.setFrame(
+                        NotchGeometry.panelFrame(notch: notch, expandedSize: vm.expandedSize),
+                        display: true
+                    )
                 case .collapsed:
-                    // Let the collapse animation finish before shrinking the window.
-                    self.shrinkTask = Task { [weak self] in
+                    // Let the collapse animation finish before shrinking.
+                    self.screenPanels[index].shrinkTask = Task { [weak panel] in
                         try? await Task.sleep(for: .milliseconds(350))
-                        guard !Task.isCancelled, let self else { return }
-                        self.panel?.setFrame(self.stripFrame, display: true)
+                        guard !Task.isCancelled, let panel else { return }
+                        panel.setFrame(Self.stripFrame(notch: notch), display: true)
                     }
                 }
             }
-            .store(in: &cancellables)
-
+        screenPanels.append(entry)
         panel.orderFrontRegardless()
     }
 
-    func repositionPanel() {
-        guard let screen = Self.targetScreen(), let vm, let panel else { return }
-        notchRect = Self.notchRect(for: screen)
-        vm.notchSize = notchRect.size
-        panel.setFrame(vm.state == .expanded ? expandedFrame : stripFrame, display: true)
-    }
-
-    private var stripFrame: CGRect {
+    private static func stripFrame(notch: CGRect) -> CGRect {
         NotchGeometry.panelFrame(
-            notch: notchRect,
+            notch: notch,
             expandedSize: CGSize(
-                width: notchRect.width + Self.stripSideMargin * 2,
-                height: notchRect.height
+                width: notch.width + stripSideMargin * 2,
+                height: notch.height
             )
         )
     }
 
-    private var expandedFrame: CGRect {
-        NotchGeometry.panelFrame(notch: notchRect, expandedSize: vm?.expandedSize ?? .zero)
-    }
-
-    private static func targetScreen() -> NSScreen? {
+    private static func primaryScreen() -> NSScreen? {
         NSScreen.screens.first { $0.safeAreaInsets.top > 0 } ?? NSScreen.main
     }
 

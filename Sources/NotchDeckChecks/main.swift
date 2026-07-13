@@ -277,6 +277,75 @@ expect(pomodoro.phase == .work, "work follows break")
 pomodoro.reset()
 expect(!pomodoro.isRunning && pomodoro.phase == .work, "reset returns to idle work")
 
+// MARK: - UsageLedger
+
+var ledger = UsageLedger()
+let day = Date(timeIntervalSince1970: 1_752_400_000) // fixed day
+ledger.record(bundleID: "com.apple.Safari", from: day, to: day.addingTimeInterval(300))
+ledger.record(bundleID: "com.apple.Terminal", from: day, to: day.addingTimeInterval(100))
+ledger.record(bundleID: "com.apple.Safari", from: day.addingTimeInterval(400), to: day.addingTimeInterval(500))
+let slices = ledger.today(top: 5, now: day)
+expect(slices.first == UsageSlice(bundleID: "com.apple.Safari", seconds: 400), "usage sorted and summed")
+expect(slices.count == 2, "two apps tracked")
+expect(UsageLedger.dayKey(for: day) != UsageLedger.dayKey(for: day.addingTimeInterval(86_400)), "day keys differ across days")
+
+var midnightLedger = UsageLedger()
+let nearMidnight = Calendar.current.startOfDay(for: day).addingTimeInterval(86_400 - 60)
+midnightLedger.record(bundleID: "app", from: nearMidnight, to: nearMidnight.addingTimeInterval(120))
+expect(midnightLedger.days.count == 2, "midnight span splits across days")
+expect(midnightLedger.days[UsageLedger.dayKey(for: nearMidnight)]?["app"] == 60, "first day gets 60s")
+
+// MARK: - NotificationRowParser
+
+let notifPlist: [String: Any] = ["req": ["titl": "New message", "subt": "Sam", "body": "hey!"]]
+let notifData = try! PropertyListSerialization.data(fromPropertyList: notifPlist, format: .binary, options: 0)
+if let item = NotificationRowParser.parse(data: notifData, appID: "com.apple.MobileSMS", uuid: "AB", deliveredCocoa: 700_000_000) {
+    expect(item.title == "New message" && item.subtitle == "Sam" && item.body == "hey!", "notification fields parsed")
+    expect(item.appBundleID == "com.apple.MobileSMS", "notification app id")
+} else {
+    expect(false, "notification plist not parsed")
+}
+let emptyNotif = try! PropertyListSerialization.data(fromPropertyList: ["req": [String: Any]()], format: .binary, options: 0)
+expect(NotificationRowParser.parse(data: emptyNotif, appID: "x", uuid: "y", deliveredCocoa: 0) == nil, "empty notification skipped")
+
+// MARK: - TranslationResponseParser
+
+let openAIResponse = Data(#"{"choices":[{"message":{"role":"assistant","content":"  Hola \n"}}]}"#.utf8)
+expect(TranslationResponseParser.openAIText(from: openAIResponse) == "Hola", "openai content extracted+trimmed")
+let ollamaResponse = Data(#"{"model":"llama3.2","message":{"role":"assistant","content":"Bonjour"}}"#.utf8)
+expect(TranslationResponseParser.ollamaText(from: ollamaResponse) == "Bonjour", "ollama content extracted")
+expect(TranslationResponseParser.openAIText(from: Data(#"{"error":{}}"#.utf8)) == nil, "openai error → nil")
+
+// MARK: - GitPayloadParser
+
+let ghJSON = Data(#"{"items":[{"title":"Fix crash","number":42,"html_url":"https://github.com/a/b/pull/42","repository_url":"https://api.github.com/repos/a/b","updated_at":"2026-07-10T10:00:00Z"}]}"#.utf8)
+let ghPRs = GitPayloadParser.github(data: ghJSON, isReviewRequest: true)
+expect(ghPRs.count == 1 && ghPRs[0].repo == "a/b" && ghPRs[0].isReviewRequest, "github PR parsed")
+expect(ghPRs[0].updated != nil, "github date parsed")
+
+let glJSON = Data(#"[{"title":"Add API","iid":7,"web_url":"https://gitlab.com/g/p/-/merge_requests/7","references":{"full":"g/p!7"},"updated_at":"2026-07-11T09:30:00.000Z"}]"#.utf8)
+let glPRs = GitPayloadParser.gitlab(data: glJSON, isReviewRequest: false)
+expect(glPRs.count == 1 && glPRs[0].repo == "g/p" && glPRs[0].provider == .gitlab, "gitlab MR parsed")
+
+let bbJSON = Data(#"{"values":[{"title":"Hotfix","id":3,"links":{"html":{"href":"https://bitbucket.org/w/r/pull-requests/3"}},"destination":{"repository":{"full_name":"w/r"}},"updated_on":"2026-07-12T08:00:00.000000+00:00"}]}"#.utf8)
+let bbPRs = GitPayloadParser.bitbucket(data: bbJSON)
+expect(bbPRs.count == 1 && bbPRs[0].repo == "w/r" && bbPRs[0].provider == .bitbucket, "bitbucket PR parsed")
+
+// MARK: - ClaudeSessionParser
+
+let jsonlTail = """
+{"type":"user","message":{"content":"hi"}}
+{"type":"assistant","message":{"model":"claude-fable-5","usage":{"input_tokens":1200,"output_tokens":300,"cache_read_input_tokens":50000}}}
+not json at all
+{"type":"assistant","message":{"model":"claude-fable-5","usage":{"input_tokens":1500,"output_tokens":450,"cache_read_input_tokens":52000}}}
+"""
+let stats = ClaudeSessionParser.parse(tail: jsonlTail)
+expect(stats.assistantMessages == 2, "assistant messages counted")
+expect(stats.inputTokens == 1500 && stats.outputTokens == 450, "last usage wins")
+expect(stats.cacheReadTokens == 52000, "cache tokens parsed")
+expect(stats.model == "claude-fable-5", "model parsed")
+expect(ClaudeSessionParser.projectName(fromDirName: "-Users-aman-Desktop-NotchDeck") == "NotchDeck", "project name from dir")
+
 // MARK: - Summary
 
 if failures == 0 {

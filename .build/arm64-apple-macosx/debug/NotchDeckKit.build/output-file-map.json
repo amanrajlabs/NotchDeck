@@ -44,6 +44,13 @@
     "swift-dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/CalendarViews.swiftdeps",
     "diagnostics": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/CalendarViews.dia"
   },
+  "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Claude/ClaudeMonitor.swift": {
+    "dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ClaudeMonitor.d",
+    "object": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ClaudeMonitor.swift.o",
+    "swiftmodule": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ClaudeMonitor~partial.swiftmodule",
+    "swift-dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ClaudeMonitor.swiftdeps",
+    "diagnostics": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ClaudeMonitor.dia"
+  },
   "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/DashboardModule.swift": {
     "dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DashboardModule.d",
     "object": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DashboardModule.swift.o",
@@ -57,6 +64,13 @@
     "swiftmodule": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/QuickToggles~partial.swiftmodule",
     "swift-dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/QuickToggles.swiftdeps",
     "diagnostics": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/QuickToggles.dia"
+  },
+  "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/ScreenTime.swift": {
+    "dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ScreenTime.d",
+    "object": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ScreenTime.swift.o",
+    "swiftmodule": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ScreenTime~partial.swiftmodule",
+    "swift-dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ScreenTime.swiftdeps",
+    "diagnostics": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ScreenTime.dia"
   },
   "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/Weather.swift": {
     "dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/Weather.d",
@@ -78,6 +92,13 @@
     "swiftmodule": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DropViews~partial.swiftmodule",
     "swift-dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DropViews.swiftdeps",
     "diagnostics": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DropViews.dia"
+  },
+  "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Git/GitProviders.swift": {
+    "dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/GitProviders.d",
+    "object": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/GitProviders.swift.o",
+    "swiftmodule": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/GitProviders~partial.swiftmodule",
+    "swift-dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/GitProviders.swiftdeps",
+    "diagnostics": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/GitProviders.dia"
   },
   "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/HUD/HUDController.swift": {
     "dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/HUDController.d",
@@ -128,6 +149,13 @@
     "swift-dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotesModule.swiftdeps",
     "diagnostics": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotesModule.dia"
   },
+  "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Notifications/NotificationsDB.swift": {
+    "dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotificationsDB.d",
+    "object": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotificationsDB.swift.o",
+    "swiftmodule": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotificationsDB~partial.swiftmodule",
+    "swift-dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotificationsDB.swiftdeps",
+    "diagnostics": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotificationsDB.dia"
+  },
   "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Pomodoro/Pomodoro.swift": {
     "dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/Pomodoro.d",
     "object": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/Pomodoro.swift.o",
@@ -155,6 +183,13 @@
     "swiftmodule": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TasksModule~partial.swiftmodule",
     "swift-dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TasksModule.swiftdeps",
     "diagnostics": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TasksModule.dia"
+  },
+  "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Translation/TranslationModule.swift": {
+    "dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TranslationModule.d",
+    "object": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TranslationModule.swift.o",
+    "swiftmodule": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TranslationModule~partial.swiftmodule",
+    "swift-dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TranslationModule.swiftdeps",
+    "diagnostics": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TranslationModule.dia"
   },
   "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Settings/SettingsStore.swift": {
     "dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SettingsStore.d",

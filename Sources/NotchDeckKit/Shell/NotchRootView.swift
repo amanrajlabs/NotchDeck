@@ -14,6 +14,10 @@ struct ModuleSet {
     let pomodoro: PomodoroModule
     let tasks: TasksModule
     let notes: NotesModule
+    let notifications: NotificationsModule
+    let translation: TranslationModule
+    let git: GitModule
+    let claude: ClaudeModule
 
     init(settings: SettingsStore) {
         dashboard = DashboardModule()
@@ -26,10 +30,14 @@ struct ModuleSet {
         pomodoro = PomodoroModule()
         tasks = TasksModule()
         notes = NotesModule()
+        notifications = NotificationsModule()
+        translation = TranslationModule()
+        git = GitModule()
+        claude = ClaudeModule()
     }
 
     var all: [any NotchModule] {
-        [dashboard, media, calendar, tasks, notes, pomodoro, system, drop, bluetooth, hud]
+        [dashboard, media, calendar, tasks, notes, pomodoro, notifications, git, claude, translation, system, drop, bluetooth, hud]
     }
 }
 
@@ -163,7 +171,7 @@ struct ExpandedView: View {
                 VStack(spacing: 4) {
                     // Header row flanks the physical notch.
                     HStack(spacing: 0) {
-                        HStack(spacing: 7) {
+                        HStack(spacing: 5) {
                             ForEach(leftTabs, id: \.id) { module in
                                 TabButton(
                                     icon: module.icon,
@@ -174,7 +182,7 @@ struct ExpandedView: View {
                         .frame(width: sideWidth, alignment: .leading)
                         .padding(.leading, 4)
                         Color.clear.frame(width: vm.notchSize.width)
-                        HStack(spacing: 7) {
+                        HStack(spacing: 5) {
                             ForEach(rightTabs, id: \.id) { module in
                                 TabButton(
                                     icon: module.icon,
@@ -222,9 +230,9 @@ struct TabButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(isSelected ? .white : Color.white.opacity(0.45))
-                .frame(width: 26, height: 22)
+                .frame(width: 24, height: 22)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
                         .fill(isSelected ? Color.white.opacity(0.15) : .clear)

@@ -226,11 +226,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Claude/ClaudeMonitor.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/DashboardModule.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/QuickToggles.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/ScreenTime.swift"
         },
         {
           "kind" : "file",
@@ -243,6 +251,10 @@
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Drop/DropViews.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Git/GitProviders.swift"
         },
         {
           "kind" : "file",
@@ -274,6 +286,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Notifications/NotificationsDB.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Pomodoro/Pomodoro.swift"
         },
         {
@@ -287,6 +303,10 @@
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Tasks/TasksModule.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Translation/TranslationModule.swift"
         },
         {
           "kind" : "file",
@@ -339,11 +359,14 @@
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/BTViews.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/CalendarSource.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/CalendarViews.swift.o",
+        "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ClaudeMonitor.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DashboardModule.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/QuickToggles.swift.o",
+        "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ScreenTime.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/Weather.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DropActions.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DropViews.swift.o",
+        "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/GitProviders.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/HUDController.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/HUDViews.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/MediaController.swift.o",
@@ -351,10 +374,12 @@
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SystemNowPlaying.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotchModule.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotesModule.swift.o",
+        "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotificationsDB.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/Pomodoro.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SystemStats.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SystemViews.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TasksModule.swift.o",
+        "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TranslationModule.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SettingsStore.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SettingsWindow.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotchGeometry.swift.o",
@@ -435,11 +460,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ClaudeMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DashboardModule.swift.o"
         },
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/QuickToggles.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ScreenTime.swift.o"
         },
         {
           "kind" : "file",
@@ -452,6 +485,10 @@
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DropViews.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/GitProviders.swift.o"
         },
         {
           "kind" : "file",
@@ -483,6 +520,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotificationsDB.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/Pomodoro.swift.o"
         },
         {
@@ -496,6 +537,10 @@
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TasksModule.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TranslationModule.swift.o"
         },
         {
           "kind" : "file",
@@ -542,11 +587,14 @@
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Bluetooth/BTViews.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Calendar/CalendarSource.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Calendar/CalendarViews.swift",
+        "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Claude/ClaudeMonitor.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/DashboardModule.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/QuickToggles.swift",
+        "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/ScreenTime.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/Weather.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Drop/DropActions.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Drop/DropViews.swift",
+        "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Git/GitProviders.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/HUD/HUDController.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/HUD/HUDViews.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/MediaController.swift",
@@ -554,10 +602,12 @@
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/SystemNowPlaying.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/NotchModule.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Notes/NotesModule.swift",
+        "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Notifications/NotificationsDB.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Pomodoro/Pomodoro.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/SystemMonitor/SystemStats.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/SystemMonitor/SystemViews.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Tasks/TasksModule.swift",
+        "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Translation/TranslationModule.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Settings/SettingsStore.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Settings/SettingsWindow.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Shell/NotchGeometry.swift",
@@ -696,11 +746,14 @@
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Bluetooth/BTViews.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Calendar/CalendarSource.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Calendar/CalendarViews.swift",
+      "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Claude/ClaudeMonitor.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/DashboardModule.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/QuickToggles.swift",
+      "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/ScreenTime.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/Weather.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Drop/DropActions.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Drop/DropViews.swift",
+      "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Git/GitProviders.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/HUD/HUDController.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/HUD/HUDViews.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/MediaController.swift",
@@ -708,10 +761,12 @@
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/SystemNowPlaying.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/NotchModule.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Notes/NotesModule.swift",
+      "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Notifications/NotificationsDB.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Pomodoro/Pomodoro.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/SystemMonitor/SystemStats.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/SystemMonitor/SystemViews.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Tasks/TasksModule.swift",
+      "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Translation/TranslationModule.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Settings/SettingsStore.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Settings/SettingsWindow.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Shell/NotchGeometry.swift",
@@ -851,6 +906,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ClaudeMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DashboardModule.swift.o"
         },
         {
@@ -860,6 +919,10 @@
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DropViews.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/GitProviders.swift.o"
         },
         {
           "kind" : "file",
@@ -911,11 +974,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotificationsDB.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/Pomodoro.swift.o"
         },
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/QuickToggles.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ScreenTime.swift.o"
         },
         {
           "kind" : "file",
@@ -944,6 +1015,10 @@
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TasksModule.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TranslationModule.swift.o"
         },
         {
           "kind" : "file",
@@ -1013,6 +1088,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ClaudeMonitor.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DashboardModule.swift.o"
         },
         {
@@ -1022,6 +1101,10 @@
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DropViews.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/GitProviders.swift.o"
         },
         {
           "kind" : "file",
@@ -1073,11 +1156,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotificationsDB.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/Pomodoro.swift.o"
         },
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/QuickToggles.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ScreenTime.swift.o"
         },
         {
           "kind" : "file",
@@ -1106,6 +1197,10 @@
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TasksModule.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TranslationModule.swift.o"
         },
         {
           "kind" : "file",
@@ -1147,11 +1242,19 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Claude/ClaudeMonitor.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/DashboardModule.swift"
         },
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/QuickToggles.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/ScreenTime.swift"
         },
         {
           "kind" : "file",
@@ -1164,6 +1267,10 @@
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Drop/DropViews.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Git/GitProviders.swift"
         },
         {
           "kind" : "file",
@@ -1195,6 +1302,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Notifications/NotificationsDB.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Pomodoro/Pomodoro.swift"
         },
         {
@@ -1208,6 +1319,10 @@
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Tasks/TasksModule.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Translation/TranslationModule.swift"
         },
         {
           "kind" : "file",

@@ -20,8 +20,17 @@ Line Tools (no Xcode required).
   rings; low-battery notification at ≤20%.
 - **Calendar** — next-event countdown pill, today's events, meeting-link
   detection (Zoom/Meet/Teams/Webex) with a Join button.
+- **Notifications** — recent Notification Center items grouped in the panel
+  (reads the system store; needs Full Disk Access, one-click CTA otherwise).
+- **Translation** — OpenAI or local Ollama, 10 target languages.
+- **Pull Requests** — open PRs/MRs from GitHub, GitLab, and Bitbucket Cloud
+  (tokens in Settings), authored + review-requested, newest first.
+- **Claude Code monitor** — recent sessions with live-activity dot, model,
+  and token usage parsed from ~/.claude/projects.
+- **Screen time** — self-tracked app usage donut on the dashboard (event-
+  driven, no polling).
 - **Settings** — menu-bar icon → Settings: per-module toggles, launch at
-  login.
+  login, show on all displays.
 
 Browser/system media uses the vendored [mediaremote-adapter](Vendor/mediaremote-adapter)
 (BSD-3) hosted by /usr/bin/perl to pass the MediaRemote entitlement gate.
@@ -51,7 +60,7 @@ Notifications. The app is ad-hoc signed; grants persist per build signature.
 ## Efficiency
 
 Event-driven throughout — no polling while collapsed except a 0.5 s brightness
-diff (HUD module only). Measured: ~0% CPU idle, ~1% while music plays (equalizer animating), ~45 MB RSS.
+diff (HUD module only). Measured: ~0.1% CPU (idle or playing — equalizer runs in the window server via Core Animation), ~45 MB RSS.
 
 ## Requirements
 

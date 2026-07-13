@@ -5,8 +5,18 @@ import ServiceManagement
 final class SettingsStore: ObservableObject {
     private let defaults = UserDefaults.standard
 
+    /// Called when panel/display configuration settings change.
+    var onDisplayConfigChange: (() -> Void)?
+
     @Published var hudSuppressSystemBezel: Bool {
         didSet { defaults.set(hudSuppressSystemBezel, forKey: "hudSuppressSystemBezel") }
+    }
+
+    @Published var showOnAllDisplays: Bool {
+        didSet {
+            defaults.set(showOnAllDisplays, forKey: "showOnAllDisplays")
+            onDisplayConfigChange?()
+        }
     }
 
     @Published var launchAtLogin: Bool {
@@ -28,6 +38,7 @@ final class SettingsStore: ObservableObject {
 
     init() {
         hudSuppressSystemBezel = defaults.bool(forKey: "hudSuppressSystemBezel")
+        showOnAllDisplays = defaults.bool(forKey: "showOnAllDisplays")
         launchAtLogin = SMAppService.mainApp.status == .enabled
     }
 

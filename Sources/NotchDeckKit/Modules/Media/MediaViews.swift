@@ -164,28 +164,58 @@ struct EqualizerBars: View {
     }
 }
 
-/// Rate-capped timeline (~8 fps) instead of repeatForever: a repeatForever
-/// animation ticks the whole hosting view at display refresh (120 Hz here)
-/// and costs ~9% CPU; this stays under 1%.
-private struct AnimatedEqualizerBars: View {
-    var body: some View {
-        TimelineView(.animation(minimumInterval: 0.12)) { context in
-            let t = context.date.timeIntervalSinceReferenceDate
-            HStack(spacing: 2) {
-                ForEach(0..<4, id: \.self) { i in
-                    Capsule()
-                        .fill(Color.green)
-                        .frame(maxHeight: .infinity)
-                        .scaleEffect(y: Self.level(bar: i, at: t), anchor: .bottom)
-                }
-            }
-        }
+/// Core Animation bars: CABasicAnimations run in the window server, so the
+/// app spends zero CPU per frame. SwiftUI-driven animation here (whether
+/// repeatForever or TimelineView) re-runs the view graph every tick and
+/// costs several percent CPU for the life of the track.
+private struct AnimatedEqualizerBars: NSViewRepresentable {
+    func makeNSView(context: Context) -> EqualizerLayerView { EqualizerLayerView() }
+    func updateNSView(_ nsView: EqualizerLayerView, context: Context) {}
+}
+
+final class EqualizerLayerView: NSView {
+    private static let peaks: [CGFloat] = [0.9, 0.55, 1.0, 0.7]
+    private var builtSize: CGSize = .zero
+
+    override init(frame: NSRect) {
+        super.init(frame: frame)
+        wantsLayer = true
     }
 
-    /// Layered per-bar sines for organic motion, in 0.25...1.0.
-    static func level(bar: Int, at t: Double) -> Double {
-        let wave = 0.5 + 0.5 * sin(t * (2.2 + Double(bar) * 0.35) + Double(bar) * 1.7)
-        return 0.25 + 0.75 * wave
+    @available(*, unavailable)
+    required init?(coder: NSCoder) { fatalError("unsupported") }
+
+    override func layout() {
+        super.layout()
+        guard bounds.width > 0, bounds.height > 0, bounds.size != builtSize else { return }
+        builtSize = bounds.size
+        rebuildBars()
+    }
+
+    private func rebuildBars() {
+        guard let layer else { return }
+        layer.sublayers?.forEach { $0.removeFromSuperlayer() }
+        let count = Self.peaks.count
+        let spacing: CGFloat = 2
+        let barWidth = (bounds.width - spacing * CGFloat(count - 1)) / CGFloat(count)
+        for i in 0..<count {
+            let bar = CALayer()
+            bar.backgroundColor = NSColor.systemGreen.cgColor
+            bar.cornerRadius = barWidth / 2
+            bar.bounds = CGRect(x: 0, y: 0, width: barWidth, height: bounds.height)
+            bar.anchorPoint = CGPoint(x: 0.5, y: 0) // grow from the bottom
+            bar.position = CGPoint(x: CGFloat(i) * (barWidth + spacing) + barWidth / 2, y: 0)
+
+            let animation = CABasicAnimation(keyPath: "transform.scale.y")
+            animation.fromValue = 0.25
+            animation.toValue = Self.peaks[i]
+            animation.duration = 0.45 + Double(i) * 0.1
+            animation.autoreverses = true
+            animation.repeatCount = .infinity
+            animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            bar.add(animation, forKey: "eq")
+            layer.addSublayer(bar)
+        }
     }
 }
 

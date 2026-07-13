@@ -4,9 +4,11 @@
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/BTViews.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/CalendarSource.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/CalendarViews.swift.o
+/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ClaudeMonitor.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DashboardModule.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DropActions.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/DropViews.swift.o
+/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/GitProviders.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/HUDController.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/HUDViews.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/MediaController.swift.o
@@ -19,8 +21,10 @@
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotchShellController.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotchViewModel.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotesModule.swift.o
+/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotificationsDB.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/Pomodoro.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/QuickToggles.swift.o
+/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/ScreenTime.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SettingsStore.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SettingsWindow.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/StatusItemController.swift.o
@@ -28,4 +32,5 @@
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SystemStats.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SystemViews.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TasksModule.swift.o
+/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/TranslationModule.swift.o
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/Weather.swift.o

@@ -12,6 +12,7 @@ final class DashboardModule: NotchModule, ObservableObject {
 
     let weather = WeatherService()
     let toggles = QuickToggleEngine()
+    let screenTime = AppUsageTracker()
 
     @Published var launcherPaths: [String] {
         didSet { UserDefaults.standard.set(launcherPaths, forKey: "dashboard.launchers") }
@@ -31,11 +32,13 @@ final class DashboardModule: NotchModule, ObservableObject {
     func activate() {
         weather.activate()
         toggles.activate()
+        screenTime.activate()
     }
 
     func deactivate() {
         weather.deactivate()
         toggles.deactivate()
+        screenTime.deactivate()
     }
 
     func panelView() -> AnyView { AnyView(DashboardPanelView(module: self)) }
@@ -107,7 +110,10 @@ struct DashboardPanelView: View {
     var body: some View {
         VStack(spacing: 10) {
             HStack(alignment: .top, spacing: 12) {
-                WeatherTile(weather: weather)
+                VStack(spacing: 8) {
+                    WeatherTile(weather: weather)
+                    ScreenTimeTile(tracker: module.screenTime)
+                }
                 togglesGrid
                 Spacer(minLength: 0)
                 profilePicker

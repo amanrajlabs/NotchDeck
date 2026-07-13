@@ -4,11 +4,14 @@
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Bluetooth/BTViews.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Calendar/CalendarSource.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Calendar/CalendarViews.swift
+/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Claude/ClaudeMonitor.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/DashboardModule.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/QuickToggles.swift
+/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/ScreenTime.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Dashboard/Weather.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Drop/DropActions.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Drop/DropViews.swift
+/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Git/GitProviders.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/HUD/HUDController.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/HUD/HUDViews.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/MediaController.swift
@@ -16,10 +19,12 @@
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/SystemNowPlaying.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/NotchModule.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Notes/NotesModule.swift
+/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Notifications/NotificationsDB.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Pomodoro/Pomodoro.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/SystemMonitor/SystemStats.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/SystemMonitor/SystemViews.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Tasks/TasksModule.swift
+/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Translation/TranslationModule.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Settings/SettingsStore.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Settings/SettingsWindow.swift
 /Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Shell/NotchGeometry.swift
