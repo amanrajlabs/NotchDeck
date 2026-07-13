@@ -197,6 +197,39 @@ do {
     expect(false, "drop action checks threw: \(error)")
 }
 
+
+// MARK: - SystemNowPlayingAccumulator (adapter stream protocol)
+
+var acc = SystemNowPlayingAccumulator()
+expect(acc.ingest(line: "not json") == nil, "garbage line ignored")
+expect(acc.ingest(line: #"{"type":"other","payload":{}}"#) == nil, "non-data line ignored")
+
+let full = #"{"type":"data","diff":false,"payload":{"title":"Lofi Mix","artist":"ChilledCow","album":"","duration":3600.5,"elapsedTime":12.25,"playing":true,"bundleIdentifier":"com.google.Chrome"}}"#
+if let result = acc.ingest(line: full), let state = result {
+    expect(state.title == "Lofi Mix", "full payload title")
+    expect(state.playing == true, "full payload playing")
+    expect(state.bundleID == "com.google.Chrome", "full payload bundle")
+    expect(state.duration == 3600.5 && state.elapsed == 12.25, "full payload times")
+} else {
+    expect(false, "full payload not parsed")
+}
+
+let diff = #"{"type":"data","diff":true,"payload":{"playing":false,"elapsedTime":80}}"#
+if let result = acc.ingest(line: diff), let state = result {
+    expect(state.title == "Lofi Mix", "diff keeps title")
+    expect(state.playing == false, "diff updates playing")
+    expect(state.elapsed == 80, "diff updates elapsed")
+} else {
+    expect(false, "diff payload not parsed")
+}
+
+let cleared = #"{"type":"data","diff":false,"payload":{}}"#
+if let result = acc.ingest(line: cleared) {
+    expect(result == nil, "empty payload means nothing playing")
+} else {
+    expect(false, "empty payload should still be a data line")
+}
+
 // MARK: - Summary
 
 if failures == 0 {

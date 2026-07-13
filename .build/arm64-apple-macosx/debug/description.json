@@ -250,6 +250,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/SystemNowPlaying.swift"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/NotchModule.swift"
         },
         {
@@ -309,6 +313,7 @@
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/HUDViews.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/MediaController.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/MediaViews.swift.o",
+        "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SystemNowPlaying.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotchModule.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SettingsStore.swift.o",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SettingsWindow.swift.o",
@@ -414,6 +419,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SystemNowPlaying.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotchModule.swift.o"
         },
         {
@@ -467,6 +476,7 @@
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/HUD/HUDViews.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/MediaController.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/MediaViews.swift",
+        "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/SystemNowPlaying.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/NotchModule.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Settings/SettingsStore.swift",
         "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Settings/SettingsWindow.swift",
@@ -612,6 +622,7 @@
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/HUD/HUDViews.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/MediaController.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/MediaViews.swift",
+      "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/SystemNowPlaying.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/NotchModule.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Settings/SettingsStore.swift",
       "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Settings/SettingsWindow.swift",
@@ -813,6 +824,10 @@
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/StatusItemController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SystemNowPlaying.swift.o"
         }
       ],
       "outputFilePath" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeck.product/Objects.LinkFileList"
@@ -939,6 +954,10 @@
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/StatusItemController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SystemNowPlaying.swift.o"
         }
       ],
       "outputFilePath" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckChecks.product/Objects.LinkFileList"
@@ -997,6 +1016,10 @@
         {
           "kind" : "file",
           "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/MediaViews.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/SystemNowPlaying.swift"
         },
         {
           "kind" : "file",

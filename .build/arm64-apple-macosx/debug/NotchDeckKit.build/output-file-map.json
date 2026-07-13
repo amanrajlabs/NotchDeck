@@ -86,6 +86,13 @@
     "swift-dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/MediaViews.swiftdeps",
     "diagnostics": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/MediaViews.dia"
   },
+  "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/Media/SystemNowPlaying.swift": {
+    "dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SystemNowPlaying.d",
+    "object": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SystemNowPlaying.swift.o",
+    "swiftmodule": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SystemNowPlaying~partial.swiftmodule",
+    "swift-dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SystemNowPlaying.swiftdeps",
+    "diagnostics": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/SystemNowPlaying.dia"
+  },
   "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/Sources/NotchDeckKit/Modules/NotchModule.swift": {
     "dependencies": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotchModule.d",
     "object": "/Users/aman/Desktop/MyStuff/Hustle/PublicProjects/GitHub/NotchDeck/.build/arm64-apple-macosx/debug/NotchDeckKit.build/NotchModule.swift.o",

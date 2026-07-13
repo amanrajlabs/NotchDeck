@@ -46,7 +46,7 @@ struct MediaPanelView: View {
                         Text(track.title)
                             .font(.system(size: 16, weight: .semibold))
                             .lineLimit(1)
-                        Text(track.artist)
+                        Text(subtitle(for: track))
                             .font(.system(size: 13))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
@@ -167,5 +167,21 @@ struct EqualizerBars: View {
         }
         .onAppear { animating = isPlaying }
         .onChange(of: isPlaying) { _, playing in animating = playing }
+    }
+}
+
+extension MediaPanelView {
+    /// "Artist", "Artist — Chrome", or "Chrome" for browser tracks.
+    func subtitle(for track: TrackInfo) -> String {
+        switch (track.artist.isEmpty, track.appName) {
+        case (false, .some(let app)) where track.player == .system:
+            return "\(track.artist) — \(app)"
+        case (false, _):
+            return track.artist
+        case (true, .some(let app)):
+            return app
+        case (true, nil):
+            return ""
+        }
     }
 }
