@@ -118,9 +118,10 @@ public enum GitPayloadParser {
 final class GitModule: NotchModule, ObservableObject {
     static let moduleID = "git"
     let id = GitModule.moduleID
-    let name = "Pull Requests"
+    let name = "PRs / MRs"
     let icon = "arrow.triangle.pull"
     let hasPanel = true
+    var preferredHeight: CGFloat { 158 }
 
     @Published private(set) var pullRequests: [PullRequest] = []
     @Published private(set) var isLoading = false
@@ -156,6 +157,29 @@ final class GitModule: NotchModule, ObservableObject {
 
     func panelView() -> AnyView { AnyView(GitPanelView(module: self)) }
     func settingsView() -> AnyView { AnyView(GitSettingsView(module: self)) }
+
+    func headerBadge() -> AnyView? {
+        let toReview = pullRequests.filter(\.isReviewRequest).count
+        return AnyView(
+            Text("\(toReview) to review")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+        )
+    }
+
+    func headerActions() -> AnyView? {
+        AnyView(
+            HStack(spacing: 6) {
+                if isLoading {
+                    ProgressView().controlSize(.mini)
+                } else {
+                    CircleIconButton(icon: "arrow.clockwise", size: 20) { [weak self] in
+                        self?.refresh()
+                    }
+                }
+            }
+        )
+    }
 
     var hasAnyToken: Bool {
         !githubToken.isEmpty || !gitlabToken.isEmpty
@@ -249,63 +273,136 @@ struct GitPanelView: View {
     @ObservedObject var module: GitModule
 
     var body: some View {
-        VStack(spacing: 6) {
-            HStack {
-                Text("Open pull requests")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                if module.isLoading {
-                    ProgressView().controlSize(.small)
-                } else {
-                    Button {
-                        module.refresh()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            if let status = module.statusMessage, module.pullRequests.isEmpty {
-                VStack(spacing: 8) {
-                    Text(status).foregroundStyle(.secondary)
-                    if !module.hasAnyToken { OpenSettingsButton() }
+        Group {
+            if !module.hasAnyToken {
+                VStack(spacing: 7) {
+                    Image(systemName: "key.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(.secondary)
+                    Text("Connect providers")
+                        .font(.system(size: 13, weight: .semibold))
+                    Text("Add a Personal Access Token for GitHub, GitLab, or Bitbucket in Settings to see PRs/MRs requesting your review.")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 380)
+                    OpenSettingsButton()
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
+                HStack(alignment: .top, spacing: 14) {
+                    sidebar.frame(width: 130)
+                    list.frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .onAppear { module.refresh() }
+    }
+
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 7) {
+                Image(systemName: "arrow.triangle.pull").font(.system(size: 10)).frame(width: 14)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("PRs / MRs").font(.system(size: 11, weight: .semibold))
+                    Text("\(module.pullRequests.count) open")
+                        .font(.system(size: 8)).foregroundStyle(.tertiary)
+                }
+                Spacer(minLength: 0)
+                Circle().fill(Color.white).frame(width: 4, height: 4)
+            }
+            .padding(.horizontal, 8).padding(.vertical, 5)
+            .background(RoundedRectangle(cornerRadius: 8).fill(Theme.card))
+            HStack(spacing: 7) {
+                Image(systemName: "arrow.triangle.branch").font(.system(size: 10)).frame(width: 14)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Pipelines").font(.system(size: 11, weight: .semibold))
+                    Text("0 pipelines").font(.system(size: 8)).foregroundStyle(.tertiary)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 8).padding(.vertical, 5)
+            .opacity(0.55)
+            Spacer(minLength: 0)
+        }
+    }
+
+    private var list: some View {
+        Group {
+            if module.pullRequests.isEmpty {
+                Text(module.statusMessage ?? "No open pull requests")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
                 ScrollView {
-                    VStack(spacing: 6) {
+                    VStack(spacing: 4) {
                         ForEach(module.pullRequests) { pr in
-                            Button {
-                                NSWorkspace.shared.open(pr.url)
-                            } label: {
-                                HStack(spacing: 8) {
-                                    Image(systemName: pr.isReviewRequest ? "eye.fill" : "arrow.triangle.pull")
-                                        .font(.system(size: 11))
-                                        .foregroundStyle(pr.isReviewRequest ? .orange : .green)
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        Text(pr.title).font(.system(size: 12)).lineLimit(1)
-                                        Text("\(pr.provider.rawValue) · \(pr.repo)")
-                                            .font(.system(size: 9))
-                                            .foregroundStyle(.tertiary)
-                                    }
-                                    Spacer()
-                                    if let updated = pr.updated {
-                                        Text(updated, style: .relative)
-                                            .font(.system(size: 9))
-                                            .foregroundStyle(.tertiary)
-                                    }
-                                }
-                                .padding(6)
-                                .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.06)))
-                            }
-                            .buttonStyle(.plain)
+                            PullRequestRow(pr: pr)
                         }
                     }
                 }
             }
         }
-        .onAppear { module.refresh() }
+    }
+}
+
+struct PullRequestRow: View {
+    let pr: PullRequest
+    @State private var hovering = false
+
+    private var providerColor: Color {
+        switch pr.provider {
+        case .github: Color(red: 0.55, green: 0.45, blue: 1.0)
+        case .gitlab: Color(red: 0.99, green: 0.43, blue: 0.16)
+        case .bitbucket: Color(red: 0.16, green: 0.42, blue: 0.99)
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 9) {
+            Circle()
+                .fill(providerColor.opacity(0.35))
+                .overlay(
+                    Text(String(pr.repo.prefix(1)).uppercased())
+                        .font(.system(size: 10, weight: .bold))
+                )
+                .frame(width: 24, height: 24)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(pr.title)
+                    .font(.system(size: 11, weight: .bold))
+                    .lineLimit(1)
+                HStack(spacing: 5) {
+                    Text(pr.repo)
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                    Text(pr.provider.rawValue)
+                        .font(.system(size: 8, weight: .semibold))
+                        .padding(.horizontal, 5).padding(.vertical, 1)
+                        .background(RoundedRectangle(cornerRadius: 4).fill(Color.white.opacity(0.12)))
+                        .foregroundStyle(.secondary)
+                    if pr.isReviewRequest {
+                        Text("review")
+                            .font(.system(size: 8, weight: .semibold))
+                            .padding(.horizontal, 5).padding(.vertical, 1)
+                            .background(RoundedRectangle(cornerRadius: 4).fill(Color.orange.opacity(0.3)))
+                            .foregroundStyle(.orange)
+                    }
+                }
+            }
+            Spacer(minLength: 0)
+            if let updated = pr.updated {
+                Text(updated, style: .relative)
+                    .font(.system(size: 8))
+                    .foregroundStyle(.tertiary)
+            }
+            CircleIconButton(icon: "arrow.up.right", size: 20) {
+                NSWorkspace.shared.open(pr.url)
+            }
+        }
+        .padding(.horizontal, 8).padding(.vertical, 5)
+        .background(RoundedRectangle(cornerRadius: 8).fill(hovering ? Theme.cardHover : Theme.card))
+        .onHover { hovering = $0 }
     }
 }
 

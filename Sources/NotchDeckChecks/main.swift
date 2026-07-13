@@ -346,6 +346,33 @@ expect(stats.cacheReadTokens == 52000, "cache tokens parsed")
 expect(stats.model == "claude-fable-5", "model parsed")
 expect(ClaudeSessionParser.projectName(fromDirName: "-Users-aman-Desktop-NotchDeck") == "NotchDeck", "project name from dir")
 
+// MARK: - DayProgress
+
+let workday = Calendar.current.startOfDay(for: Date())
+expect(DayProgress.fraction(now: workday.addingTimeInterval(8 * 3600), startHour: 9, endHour: 18) == nil, "before workday → nil")
+expect(DayProgress.fraction(now: workday.addingTimeInterval(13.5 * 3600), startHour: 9, endHour: 18) == 0.5, "midday → 0.5")
+expect(DayProgress.fraction(now: workday.addingTimeInterval(19 * 3600), startHour: 9, endHour: 18) == 1, "after workday → 1")
+expect(DayProgress.fraction(now: workday, startHour: 18, endHour: 9) == nil, "inverted hours → nil")
+
+// MARK: - Claude preview extraction
+
+let previewTail = """
+{"type":"assistant","message":{"model":"claude-fable-5","content":[{"type":"text","text":"  First reply  "}],"usage":{"input_tokens":10,"output_tokens":5}}}
+{"type":"assistant","message":{"model":"claude-fable-5","content":[{"type":"tool_use","name":"Bash"},{"type":"text","text":"Fixed the bug in the parser."}],"usage":{"input_tokens":20,"output_tokens":9}}}
+"""
+let previewStats = ClaudeSessionParser.parse(tail: previewTail)
+expect(previewStats.preview == "Fixed the bug in the parser.", "last assistant text wins as preview")
+expect(previewStats.assistantMessages == 2, "preview tail counts messages")
+
+// MARK: - MonthGrid days
+
+let calendar = Calendar.current
+let july = calendar.date(from: DateComponents(year: 2026, month: 7, day: 15))!
+let gridDays = MonthGrid.gridDays(for: july, calendar: calendar)
+expect(gridDays.count == 42, "month grid always 6 weeks")
+expect(calendar.component(.weekday, from: gridDays[0].date) == 2, "grid starts on Monday")
+expect(gridDays.filter(\.inMonth).count == 31, "July has 31 in-month days")
+
 // MARK: - Summary
 
 if failures == 0 {

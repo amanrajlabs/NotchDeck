@@ -25,6 +25,7 @@ final class TranslationModule: NotchModule, ObservableObject {
     let name = "Translation"
     let icon = "character.bubble.fill"
     let hasPanel = true
+    var preferredHeight: CGFloat { 176 }
 
     enum Engine: String, CaseIterable {
         case openAI = "OpenAI"

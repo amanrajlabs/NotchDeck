@@ -180,6 +180,24 @@ final class MediaController: ObservableObject {
         }
     }
 
+    func toggleShuffle() {
+        guard let player = track?.player else { return }
+        switch player {
+        case .spotify: runScript("tell application \"Spotify\" to set shuffling to not shuffling")
+        case .music: runScript("tell application \"Music\" to set shuffle enabled to not shuffle enabled")
+        case .system: break
+        }
+    }
+
+    func toggleRepeat() {
+        guard let player = track?.player else { return }
+        switch player {
+        case .spotify: runScript("tell application \"Spotify\" to set repeating to not repeating")
+        case .music: runScript("tell application \"Music\" to if song repeat is off then set song repeat to all")
+        case .system: break
+        }
+    }
+
     private func command(_ verb: String) {
         guard let player = track?.player ?? runningPlayer(),
               let scriptName = player.scriptName else { return }

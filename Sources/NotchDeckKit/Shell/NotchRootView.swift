@@ -148,7 +148,7 @@ struct CollapsedStripView: View {
     }
 }
 
-// MARK: - Expanded dashboard
+// MARK: - Expanded panel chrome
 
 struct ExpandedView: View {
     @ObservedObject var vm: NotchViewModel
@@ -158,79 +158,117 @@ struct ExpandedView: View {
     var body: some View {
         let panelModules = registry.panelModules
         let selectedID = vm.selectedModuleID ?? panelModules.first?.id
-        let sideWidth = (vm.expandedSize.width - vm.notchSize.width) / 2
-        // Tabs flow around the physical notch: first half left, rest right.
-        let splitIndex = (panelModules.count + 1) / 2
-        let leftTabs = Array(panelModules.prefix(splitIndex))
-        let rightTabs = Array(panelModules.dropFirst(splitIndex))
+        let selected = panelModules.first(where: { $0.id == selectedID })
+        let contentHeight = min(selected?.preferredHeight ?? 170, Theme.maxContentHeight)
+        let panelHeight = Theme.headerHeight + contentHeight + 10
 
-        NotchShape(topRadius: 8, bottomRadius: 22)
-            .fill(Color.black)
-            .frame(width: vm.expandedSize.width, height: vm.expandedSize.height)
+        VStack(spacing: Theme.dockGap) {
+            panel(selected: selected, height: panelHeight)
+                .frame(width: Theme.panelWidth, height: panelHeight)
+            ModuleDock(
+                modules: panelModules,
+                selectedID: selectedID
+            ) { vm.selectedModuleID = $0 }
+        }
+        .frame(maxWidth: .infinity, alignment: .top)
+        .onHover { vm.setHover($0) }
+        .preferredColorScheme(.dark)
+    }
+
+    private func panel(selected: (any NotchModule)?, height: CGFloat) -> some View {
+        let shape = NotchShape(topRadius: 8, bottomRadius: 18)
+        return shape
+            .fill(Theme.panelGradient)
+            .overlay(shape.stroke(Color.white.opacity(0.07), lineWidth: 1))
             .overlay(alignment: .top) {
-                VStack(spacing: 4) {
-                    // Header row flanks the physical notch.
-                    HStack(spacing: 0) {
-                        // Paddings live INSIDE the fixed side widths — the
-                        // three columns must sum to exactly the panel width
-                        // or the outermost symbols clip off the shape.
-                        HStack(spacing: 5) {
-                            ForEach(leftTabs, id: \.id) { module in
-                                TabButton(
-                                    icon: module.icon,
-                                    name: module.name,
-                                    isSelected: module.id == selectedID
-                                ) { vm.selectedModuleID = module.id }
-                            }
-                            Spacer(minLength: 0)
-                        }
-                        .padding(.leading, 10)
-                        .frame(width: sideWidth, alignment: .leading)
-                        Color.clear.frame(width: vm.notchSize.width)
-                        HStack(spacing: 5) {
-                            ForEach(rightTabs, id: \.id) { module in
-                                TabButton(
-                                    icon: module.icon,
-                                    name: module.name,
-                                    isSelected: module.id == selectedID
-                                ) { vm.selectedModuleID = module.id }
-                            }
-                            Spacer(minLength: 0)
-                            Button {
-                                SettingsWindowController.shared.show()
-                            } label: {
-                                Image(systemName: "gearshape.fill")
+                VStack(spacing: 0) {
+                    header(selected: selected)
+                    HStack(alignment: .top, spacing: 0) {
+                        Group {
+                            if let selected {
+                                selected.panelView()
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            } else {
+                                Text("Enable modules in Settings")
                                     .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                             }
-                            .buttonStyle(.plain)
                         }
-                        .padding(.trailing, 12)
-                        .frame(width: sideWidth, alignment: .trailing)
-                    }
-                    .frame(height: max(vm.notchSize.height, 30))
-
-                    if let selected = panelModules.first(where: { $0.id == selectedID }) {
-                        selected.panelView()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 16)
-                    } else {
-                        Text("Enable modules in Settings")
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(.leading, 16)
+                        .padding(.trailing, 6)
+                        .padding(.bottom, 10)
+                        QuickRail(
+                            modules: registry.panelModules,
+                            selectedID: selected?.id
+                        ) { vm.selectedModuleID = $0 }
                     }
                 }
             }
-            .clipShape(NotchShape(topRadius: 8, bottomRadius: 22))
-            .contentShape(NotchShape(topRadius: 8, bottomRadius: 22))
-            .onHover { vm.setHover($0) }
-            .preferredColorScheme(.dark)
+            .overlay(alignment: .bottomTrailing) {
+                CircleIconButton(icon: "arrow.down.forward.and.arrow.up.backward", size: 22) {
+                    vm.collapse()
+                }
+                .padding(8)
+            }
+            .clipShape(shape)
+            .contentShape(shape)
+            .shadow(color: .black.opacity(0.5), radius: 18, y: 8)
+    }
+
+    private func header(selected: (any NotchModule)?) -> some View {
+        let sideWidth = (Theme.panelWidth - vm.notchSize.width) / 2
+        return HStack(spacing: 0) {
+            HStack(spacing: 8) {
+                Text(selected?.name ?? "NotchDeck")
+                    .font(.system(size: 13, weight: .bold))
+                if let badge = selected?.headerBadge() {
+                    badge
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.leading, 14)
+            .frame(width: sideWidth, alignment: .leading)
+            Color.clear.frame(width: vm.notchSize.width)
+            HStack(spacing: 7) {
+                Spacer(minLength: 0)
+                if let actions = selected?.headerActions() {
+                    actions
+                }
+                CircleIconButton(icon: "info", size: 20) {
+                    SettingsWindowController.shared.show()
+                }
+                .help("Settings")
+            }
+            .padding(.trailing, 12)
+            .frame(width: sideWidth, alignment: .trailing)
+        }
+        .frame(height: Theme.headerHeight)
     }
 }
 
-struct TabButton: View {
+/// Floating row of circular module buttons below the panel.
+struct ModuleDock: View {
+    let modules: [any NotchModule]
+    let selectedID: String?
+    let select: (String) -> Void
+
+    var body: some View {
+        HStack(spacing: 9) {
+            ForEach(modules, id: \.id) { module in
+                DockButton(
+                    icon: module.icon,
+                    name: module.name,
+                    isSelected: module.id == selectedID
+                ) { select(module.id) }
+            }
+        }
+        .frame(height: Theme.dockHeight)
+    }
+}
+
+struct DockButton: View {
     let icon: String
-    var name = ""
+    let name: String
     let isSelected: Bool
     let action: () -> Void
     @State private var hovering = false
@@ -238,15 +276,57 @@ struct TabButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(isSelected ? .white : Color.white.opacity(hovering ? 0.8 : 0.45))
-                .frame(width: 24, height: 22)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(isSelected ? Color.black : .white)
+                .frame(width: 34, height: 34)
                 .background(
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(isSelected
-                            ? Color.white.opacity(0.15)
-                            : Color.white.opacity(hovering ? 0.08 : 0))
+                    Circle().fill(
+                        isSelected
+                            ? Color.white
+                            : Color.black.opacity(hovering ? 0.75 : 0.9)
+                    )
                 )
+                .overlay(Circle().stroke(Color.white.opacity(0.14), lineWidth: 1))
+                .scaleEffect(hovering && !isSelected ? 1.1 : 1)
+                .animation(.snappy(duration: 0.15), value: hovering)
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .help(name)
+    }
+}
+
+/// Tiny quick-switch icons along the panel's right edge.
+struct QuickRail: View {
+    let modules: [any NotchModule]
+    let selectedID: String?
+    let select: (String) -> Void
+
+    var body: some View {
+        VStack(spacing: 9) {
+            ForEach(Array(modules.filter { $0.id != selectedID }.prefix(5)), id: \.id) { module in
+                RailButton(icon: module.icon, name: module.name) { select(module.id) }
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(width: 26)
+        .padding(.top, 4)
+        .padding(.trailing, 4)
+    }
+}
+
+struct RailButton: View {
+    let icon: String
+    let name: String
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(Color.white.opacity(hovering ? 0.95 : 0.35))
+                .frame(width: 18, height: 16)
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }

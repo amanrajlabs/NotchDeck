@@ -8,6 +8,7 @@ final class BluetoothModule: NotchModule, ObservableObject {
     let name = "Bluetooth Battery"
     let icon = "airpods"
     let hasPanel = true
+    var preferredHeight: CGFloat { 168 }
 
     @Published private(set) var devices: [BTDevice] = []
     private var refreshTimer: Timer?
@@ -39,6 +40,14 @@ final class BluetoothModule: NotchModule, ObservableObject {
     }
 
     func panelView() -> AnyView { AnyView(BTPanelView(module: self)) }
+
+    func headerBadge() -> AnyView? {
+        AnyView(
+            Text("\(devices.count) device\(devices.count == 1 ? "" : "s")")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+        )
+    }
 
     func liveActivityView() -> AnyView? {
         guard let low = devices.first(where: { $0.minPercent <= Self.lowBatteryThreshold }) else {

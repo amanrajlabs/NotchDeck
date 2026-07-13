@@ -149,7 +149,7 @@ enum AppUsageTrackerShared {
 struct ScreenTimeTile: View {
     @ObservedObject var tracker: AppUsageTracker
 
-    private static let palette: [Color] = [.blue, .green, .orange, .purple, .pink, .gray]
+    static let palette: [Color] = [.blue, .green, .orange, .purple, .pink, .gray]
 
     var body: some View {
         let slices = tracker.todaySlices

@@ -70,8 +70,31 @@ final class PomodoroModule: NotchModule, ObservableObject {
     let icon = "timer"
     let hasPanel = true
 
+    struct Preset: Identifiable {
+        let id: String
+        let name: String
+        let icon: String
+        let workMinutes: Int
+        let breakMinutes: Int
+    }
+
+    static let presets: [Preset] = [
+        Preset(id: "work", name: "Work", icon: "briefcase.fill", workMinutes: 25, breakMinutes: 5),
+        Preset(id: "short", name: "Short Break", icon: "cup.and.saucer.fill", workMinutes: 5, breakMinutes: 5),
+        Preset(id: "long", name: "Long Break", icon: "figure.walk", workMinutes: 15, breakMinutes: 5),
+        Preset(id: "quick", name: "Quick Timer", icon: "bolt.fill", workMinutes: 5, breakMinutes: 1),
+        Preset(id: "deep", name: "Deep Focus", icon: "brain.head.profile", workMinutes: 50, breakMinutes: 10),
+    ]
+
     @Published private(set) var engine = PomodoroEngine()
+    @Published var activePresetID = "work"
+    @Published var focusTarget: String?
+
+    var preferredHeight: CGFloat { 190 }
+
     private var timer: Timer?
+    weak var calendarSource: CalendarSource?
+    weak var tasks: TasksModule?
 
     func activate() {}
     func deactivate() {
@@ -82,9 +105,30 @@ final class PomodoroModule: NotchModule, ObservableObject {
 
     func panelView() -> AnyView { AnyView(PomodoroPanelView(module: self)) }
 
+    func headerBadge() -> AnyView? {
+        AnyView(
+            Text("\(engine.completedSessions) sessions today")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+        )
+    }
+
     func liveActivityView() -> AnyView? {
         guard engine.isRunning else { return nil }
         return AnyView(PomodoroLivePill(module: self))
+    }
+
+    func apply(_ preset: Preset) {
+        pause()
+        activePresetID = preset.id
+        var fresh = PomodoroEngine(workMinutes: preset.workMinutes, breakMinutes: preset.breakMinutes)
+        // Carry the session count across preset switches.
+        for _ in 0..<engine.completedSessions {
+            fresh.start(at: .distantPast)
+            _ = fresh.advanceIfElapsed(at: Date())
+            fresh.reset()
+        }
+        engine = PomodoroEngine(workMinutes: preset.workMinutes, breakMinutes: preset.breakMinutes)
     }
 
     func start() {
@@ -107,6 +151,17 @@ final class PomodoroModule: NotchModule, ObservableObject {
     func reset() {
         pause()
         engine.reset()
+        focusTarget = nil
+    }
+
+    func skip() {
+        guard engine.isRunning else { return }
+        var advanced = engine
+        // Force phase end by pausing and rebuilding at zero remaining.
+        advanced.pause(at: Date().addingTimeInterval(engine.remaining(at: Date())))
+        advanced.start(at: Date().addingTimeInterval(-engine.phaseDuration))
+        _ = advanced.advanceIfElapsed(at: Date())
+        engine = advanced
     }
 
     private func tick() {
@@ -159,57 +214,166 @@ struct PomodoroPanelView: View {
     @ObservedObject var module: PomodoroModule
 
     var body: some View {
+        HStack(alignment: .top, spacing: 18) {
+            dialColumn.frame(width: 200)
+            presetsColumn.frame(width: 160)
+            focusColumn.frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+    }
+
+    private var dialColumn: some View {
         let engine = module.engine
+        let preset = PomodoroModule.presets.first { $0.id == module.activePresetID }
         let remaining = engine.remaining(at: Date())
         let progress = 1 - remaining / max(engine.phaseDuration, 1)
 
-        HStack(spacing: 26) {
-            ZStack {
-                Circle().stroke(Color.white.opacity(0.1), lineWidth: 7)
-                Circle()
-                    .trim(from: 0, to: max(0.003, progress))
-                    .stroke(
-                        engine.phase == .work ? Color.red : Color.green,
-                        style: StrokeStyle(lineWidth: 7, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-                VStack(spacing: 2) {
-                    Text(Self.clock(remaining))
-                        .font(.system(size: 22, weight: .semibold).monospacedDigit())
-                    Text(engine.phase == .work ? "Focus" : "Break")
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: preset?.icon ?? "briefcase.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(preset?.name ?? "Work")
+                        .font(.system(size: 12, weight: .bold))
+                    Text(engine.isRunning ? "In session" : "Ready to focus")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.tertiary)
                 }
             }
-            .frame(width: 120, height: 120)
-
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 14) {
-                    Button {
-                        engine.isRunning ? module.pause() : module.start()
-                    } label: {
-                        Image(systemName: engine.isRunning ? "pause.fill" : "play.fill")
-                            .font(.system(size: 20))
-                    }
-                    Button { module.reset() } label: {
-                        Image(systemName: "arrow.counterclockwise")
-                            .font(.system(size: 16))
+            HStack(spacing: 14) {
+                CircleIconButton(icon: "arrow.counterclockwise", size: 24) { module.reset() }
+                ZStack {
+                    Circle().stroke(Color.white.opacity(0.1), lineWidth: 5)
+                    Circle()
+                        .trim(from: 0, to: max(0.003, progress))
+                        .stroke(
+                            engine.phase == .work ? Color.orange : Color.green,
+                            style: StrokeStyle(lineWidth: 5, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(-90))
+                    VStack(spacing: 0) {
+                        Text(Self.compactClock(remaining))
+                            .font(.system(size: 15, weight: .bold).monospacedDigit())
+                        Button {
+                            engine.isRunning ? module.pause() : module.start()
+                        } label: {
+                            Image(systemName: engine.isRunning ? "pause.fill" : "play.fill")
+                                .font(.system(size: 9))
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .buttonStyle(.plain)
-                Text("Sessions today: \(engine.completedSessions)")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                Text("\(engine.workMinutes) min focus · \(engine.breakMinutes) min break")
-                    .font(.system(size: 10))
+                .frame(width: 74, height: 74)
+                CircleIconButton(icon: "forward.fill", size: 24) { module.skip() }
+            }
+            HStack(spacing: 5) {
+                Image(systemName: "scope")
+                    .font(.system(size: 9))
                     .foregroundStyle(.tertiary)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(module.focusTarget ?? "No focus target")
+                        .font(.system(size: 10, weight: .medium))
+                        .lineLimit(1)
+                    Text("Select an event, reminder, or task")
+                        .font(.system(size: 8))
+                        .foregroundStyle(.tertiary)
+                }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var presetsColumn: some View {
+        VStack(spacing: 3) {
+            ForEach(PomodoroModule.presets) { preset in
+                Button {
+                    module.apply(preset)
+                } label: {
+                    HStack(spacing: 7) {
+                        Image(systemName: preset.icon)
+                            .font(.system(size: 9))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 13)
+                        Text(preset.name)
+                            .font(.system(size: 10, weight: .semibold))
+                        Spacer(minLength: 0)
+                        Text("\(preset.workMinutes)m")
+                            .font(.system(size: 9).monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(
+                        RoundedRectangle(cornerRadius: 7)
+                            .fill(module.activePresetID == preset.id ? Theme.cardHover : Theme.card)
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var focusColumn: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 4) {
+                Image(systemName: "scope").font(.system(size: 9))
+                Text("Focus Target").font(.system(size: 11, weight: .bold))
+            }
+            Text("Attach this timer to today's schedule.")
+                .font(.system(size: 8))
+                .foregroundStyle(.tertiary)
+            ScrollView {
+                VStack(spacing: 4) {
+                    ForEach(targets, id: \.self) { target in
+                        HStack(spacing: 6) {
+                            Image(systemName: "list.bullet.circle")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.secondary)
+                            Text(target)
+                                .font(.system(size: 10, weight: .medium))
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
+                            Button("Select") { module.focusTarget = target }
+                                .font(.system(size: 9, weight: .semibold))
+                                .buttonStyle(.plain)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(Capsule().fill(Color.white.opacity(0.9)))
+                                .foregroundStyle(.black)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 4)
+                        .background(RoundedRectangle(cornerRadius: 7).fill(Theme.card))
+                    }
+                    if targets.isEmpty {
+                        Text("Nothing scheduled today")
+                            .font(.system(size: 9))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+        }
+    }
+
+    private var targets: [String] {
+        var list: [String] = []
+        if let events = module.calendarSource?.events.prefix(3) {
+            list += events.map(\.title)
+        }
+        if let tasks = module.tasks?.visibleItems.prefix(3) {
+            list += tasks.map(\.title)
+        }
+        return Array(list.prefix(5))
     }
 
     static func clock(_ t: TimeInterval) -> String {
         let seconds = Int(t.rounded())
         return String(format: "%02d:%02d", seconds / 60, seconds % 60)
+    }
+
+    static func compactClock(_ t: TimeInterval) -> String {
+        let seconds = Int(t.rounded())
+        if seconds >= 60 { return "\(seconds / 60)m \(seconds % 60)s" }
+        return "\(seconds)s"
     }
 }

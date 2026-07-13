@@ -42,6 +42,10 @@ final class NotchShellController {
         let modules = ModuleSet(settings: settings)
         moduleSet = modules
         modules.dashboard.registry = registry
+        modules.dashboard.calendarSource = modules.calendar.source
+        modules.dashboard.pomodoro = modules.pomodoro
+        modules.pomodoro.calendarSource = modules.calendar.source
+        modules.pomodoro.tasks = modules.tasks
         registry.register(modules.all)
         rebuildPanels()
     }

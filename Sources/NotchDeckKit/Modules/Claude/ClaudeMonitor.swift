@@ -10,11 +10,13 @@ public struct ClaudeSession: Identifiable, Equatable, Sendable {
     public var outputTokens: Int
     public var cacheReadTokens: Int
     public var assistantMessages: Int
+    public var preview: String?
 
     public var isActive: Bool { Date().timeIntervalSince(lastActivity) < 120 }
 
     public init(id: String, projectName: String, lastActivity: Date, model: String?,
-                inputTokens: Int, outputTokens: Int, cacheReadTokens: Int, assistantMessages: Int) {
+                inputTokens: Int, outputTokens: Int, cacheReadTokens: Int,
+                assistantMessages: Int, preview: String? = nil) {
         self.id = id
         self.projectName = projectName
         self.lastActivity = lastActivity
@@ -23,6 +25,7 @@ public struct ClaudeSession: Identifiable, Equatable, Sendable {
         self.outputTokens = outputTokens
         self.cacheReadTokens = cacheReadTokens
         self.assistantMessages = assistantMessages
+        self.preview = preview
     }
 }
 
@@ -34,14 +37,17 @@ public enum ClaudeSessionParser {
         public var outputTokens: Int
         public var cacheReadTokens: Int
         public var assistantMessages: Int
+        /// Latest assistant text output, truncated.
+        public var preview: String?
 
         public init(model: String? = nil, inputTokens: Int = 0, outputTokens: Int = 0,
-                    cacheReadTokens: Int = 0, assistantMessages: Int = 0) {
+                    cacheReadTokens: Int = 0, assistantMessages: Int = 0, preview: String? = nil) {
             self.model = model
             self.inputTokens = inputTokens
             self.outputTokens = outputTokens
             self.cacheReadTokens = cacheReadTokens
             self.assistantMessages = assistantMessages
+            self.preview = preview
         }
     }
 
@@ -61,6 +67,15 @@ public enum ClaudeSessionParser {
                 stats.outputTokens = (usage["output_tokens"] as? NSNumber)?.intValue ?? stats.outputTokens
                 stats.cacheReadTokens = (usage["cache_read_input_tokens"] as? NSNumber)?.intValue ?? stats.cacheReadTokens
             }
+            if let blocks = message["content"] as? [[String: Any]] {
+                for block in blocks where block["type"] as? String == "text" {
+                    if let text = (block["text"] as? String)?
+                        .trimmingCharacters(in: .whitespacesAndNewlines),
+                        !text.isEmpty {
+                        stats.preview = String(text.prefix(140))
+                    }
+                }
+            }
         }
         return stats
     }
@@ -77,9 +92,10 @@ public enum ClaudeSessionParser {
 final class ClaudeModule: NotchModule, ObservableObject {
     static let moduleID = "claude"
     let id = ClaudeModule.moduleID
-    let name = "Claude Code"
+    let name = "AI Coding"
     let icon = "sparkles"
     let hasPanel = true
+    var preferredHeight: CGFloat { 168 }
 
     @Published private(set) var sessions: [ClaudeSession] = []
     private var timer: Timer?
@@ -88,6 +104,23 @@ final class ClaudeModule: NotchModule, ObservableObject {
     func deactivate() { stopRefreshing() }
 
     func panelView() -> AnyView { AnyView(ClaudePanelView(module: self)) }
+
+    func headerBadge() -> AnyView? {
+        let active = sessions.filter(\.isActive).count
+        return AnyView(
+            HStack(spacing: 5) {
+                Text("(Beta)")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.tertiary)
+                if active > 0 {
+                    Circle().fill(Color.green).frame(width: 5, height: 5)
+                    Text("\(active) active")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.green)
+                }
+            }
+        )
+    }
 
     func startRefreshing() {
         refresh()
@@ -145,7 +178,8 @@ final class ClaudeModule: NotchModule, ObservableObject {
                 inputTokens: stats.inputTokens,
                 outputTokens: stats.outputTokens,
                 cacheReadTokens: stats.cacheReadTokens,
-                assistantMessages: stats.assistantMessages
+                assistantMessages: stats.assistantMessages,
+                preview: stats.preview
             ))
         }
         return sessions.sorted { $0.lastActivity > $1.lastActivity }
@@ -201,38 +235,52 @@ struct ClaudePanelView: View {
 
 struct SessionRow: View {
     let session: ClaudeSession
+    @State private var hovering = false
 
     var body: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(session.isActive ? Color.green : Color.gray.opacity(0.5))
-                .frame(width: 7, height: 7)
+        HStack(alignment: .top, spacing: 9) {
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.white.opacity(0.1))
+                .overlay(
+                    Image(systemName: "shippingbox.fill")
+                        .font(.system(size: 11))
+                        .foregroundStyle(session.isActive ? Color.green : .secondary)
+                )
+                .frame(width: 26, height: 26)
             VStack(alignment: .leading, spacing: 1) {
-                Text(session.projectName)
-                    .font(.system(size: 12, weight: .medium))
-                    .lineLimit(1)
-                HStack(spacing: 6) {
+                HStack(spacing: 5) {
+                    Text(session.projectName)
+                        .font(.system(size: 11, weight: .bold))
+                        .lineLimit(1)
                     if let model = session.model {
                         Text(model.replacingOccurrences(of: "claude-", with: ""))
-                            .font(.system(size: 9))
+                            .font(.system(size: 8))
                             .foregroundStyle(.tertiary)
                     }
-                    Text(session.lastActivity, style: .relative)
-                        .font(.system(size: 9))
-                        .foregroundStyle(.tertiary)
+                }
+                if let preview = session.preview {
+                    Text(preview)
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
                 }
             }
-            Spacer()
+            Spacer(minLength: 0)
             VStack(alignment: .trailing, spacing: 1) {
-                Text("\(Self.compact(session.inputTokens + session.cacheReadTokens)) in · \(Self.compact(session.outputTokens)) out")
-                    .font(.system(size: 10).monospacedDigit())
-                Text("\(session.assistantMessages) msgs in window")
-                    .font(.system(size: 9))
+                Text(session.lastActivity, style: .relative)
+                    .font(.system(size: 8))
                     .foregroundStyle(.tertiary)
+                Text("\(session.assistantMessages) msgs")
+                    .font(.system(size: 8).monospacedDigit())
+                    .foregroundStyle(.tertiary)
+                Text("\(Self.compact(session.inputTokens + session.cacheReadTokens)) in · \(Self.compact(session.outputTokens)) out")
+                    .font(.system(size: 8).monospacedDigit())
+                    .foregroundStyle(.secondary)
             }
         }
-        .padding(7)
-        .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.06)))
+        .padding(.horizontal, 8).padding(.vertical, 6)
+        .background(RoundedRectangle(cornerRadius: 8).fill(hovering ? Theme.cardHover : Theme.card))
+        .onHover { hovering = $0 }
     }
 
     static func compact(_ n: Int) -> String {

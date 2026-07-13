@@ -18,11 +18,22 @@ protocol NotchModule: AnyObject {
     /// Compact view for the collapsed strip; nil when nothing is live.
     func liveActivityView() -> AnyView?
     func settingsView() -> AnyView
+
+    // Presentation hooks for the expanded chrome.
+    /// Panel content height (excluding header) in points.
+    var preferredHeight: CGFloat { get }
+    /// Small view rendered next to the title (source pill, counts, …).
+    func headerBadge() -> AnyView?
+    /// Module-specific buttons rendered right of the notch in the header.
+    func headerActions() -> AnyView?
 }
 
 extension NotchModule {
     func liveActivityView() -> AnyView? { nil }
     func settingsView() -> AnyView { AnyView(EmptyView()) }
+    var preferredHeight: CGFloat { 170 }
+    func headerBadge() -> AnyView? { nil }
+    func headerActions() -> AnyView? { nil }
 }
 
 @MainActor

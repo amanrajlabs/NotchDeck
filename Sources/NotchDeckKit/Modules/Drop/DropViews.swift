@@ -6,9 +6,12 @@ import UniformTypeIdentifiers
 final class DropModule: NotchModule, ObservableObject {
     static let moduleID = "drop"
     let id = DropModule.moduleID
-    let name = "Drop Actions"
+    let name = "Shelf"
     let icon = "tray.and.arrow.down.fill"
     let hasPanel = true
+    var preferredHeight: CGFloat { 150 }
+    /// Copy vs move mode for the folder action.
+    @Published var moveMode = false
 
     @Published var pendingFiles: [URL] = []
     @Published var statusMessage: String?
@@ -23,7 +26,24 @@ final class DropModule: NotchModule, ObservableObject {
         statusMessage = nil
     }
 
-    func panelView() -> AnyView { AnyView(DropGridView(module: self)) }
+    func panelView() -> AnyView { AnyView(ShelfView(module: self)) }
+
+    func headerBadge() -> AnyView? {
+        AnyView(
+            HStack(spacing: 5) {
+                Image(systemName: "envelope.open")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+                Text("\(pendingFiles.count) item\(pendingFiles.count == 1 ? "" : "s")")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
+        )
+    }
+
+    func headerActions() -> AnyView? {
+        AnyView(ShelfHeaderActions(module: self))
+    }
 
     func addPending(_ providers: [NSItemProvider]) {
         let box = ProviderBox(providers: providers)
@@ -224,66 +244,88 @@ enum DropGridAction: Hashable {
     }
 }
 
-struct DropGridView: View {
+struct ShelfHeaderActions: View {
     @ObservedObject var module: DropModule
 
-    private static let actions: [DropGridAction] = [
-        .airdrop, .zip, .convert(.png), .convert(.jpeg), .move, .copy, .openWith,
-    ]
-
     var body: some View {
-        VStack(spacing: 10) {
-            if !module.pendingFiles.isEmpty {
-                HStack {
-                    Image(systemName: "doc.fill")
-                    Text("\(module.pendingFiles.count) file\(module.pendingFiles.count == 1 ? "" : "s") ready")
-                        .font(.caption)
-                    Button("Clear") { module.clearPending() }
-                        .buttonStyle(.plain)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .foregroundStyle(.secondary)
-            } else if let status = module.statusMessage {
-                Text(status).font(.caption).foregroundStyle(.secondary)
-            } else {
-                Text("Drop files on a tile — or anywhere to stage them")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+        HStack(spacing: 6) {
+            HeaderPill(text: module.moveMode ? "Move" : "Copy", icon: "arrow.left.arrow.right") {
+                module.moveMode.toggle()
             }
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
-                ForEach(Self.actions, id: \.self) { action in
-                    DropTile(action: action, module: module)
-                }
+            CircleIconButton(icon: "wifi", size: 20) {
+                module.run(.airdrop, on: module.pendingFiles)
             }
+            .help("AirDrop")
+            CircleIconButton(icon: "doc.zipper", size: 20) {
+                module.run(.zip, on: module.pendingFiles)
+            }
+            .help("Zip")
+            CircleIconButton(icon: "photo.on.rectangle.angled", size: 20) {
+                module.run(.convert(.png), on: module.pendingFiles)
+            }
+            .help("Convert to PNG")
+            CircleIconButton(icon: "folder", size: 20) {
+                module.run(module.moveMode ? .move : .copy, on: module.pendingFiles)
+            }
+            .help(module.moveMode ? "Move to folder…" : "Copy to folder…")
+            CircleIconButton(icon: "trash", size: 20) {
+                module.clearPending()
+            }
+            .help("Clear shelf")
         }
     }
 }
 
-struct DropTile: View {
-    let action: DropGridAction
+struct ShelfView: View {
     @ObservedObject var module: DropModule
-    @State private var isTargeted = false
 
     var body: some View {
-        VStack(spacing: 5) {
-            Image(systemName: action.icon).font(.system(size: 17))
-            Text(action.title).font(.system(size: 10))
-        }
-        .frame(maxWidth: .infinity, minHeight: 58)
-        .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(isTargeted ? Color.accentColor.opacity(0.4) : Color.white.opacity(0.08))
-        )
-        .contentShape(RoundedRectangle(cornerRadius: 10))
-        .onTapGesture { module.run(action, on: module.pendingFiles) }
-        .onDrop(of: [UTType.fileURL], isTargeted: $isTargeted) { providers in
-            let box = ProviderBox(providers: providers)
-            Task { @MainActor in
-                let urls = await FileDropLoader.urls(from: box)
-                module.run(action, on: urls)
+        VStack(spacing: 6) {
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(
+                    Color.white.opacity(0.25),
+                    style: StrokeStyle(lineWidth: 1, dash: [5, 4])
+                )
+                .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.03)))
+                .overlay(alignment: .topLeading) {
+                    if module.pendingFiles.isEmpty {
+                        VStack(spacing: 6) {
+                            Image(systemName: "tray.and.arrow.down")
+                                .font(.system(size: 22))
+                                .foregroundStyle(.tertiary)
+                            Text("Drop files here — then AirDrop, zip, convert, or file them")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        HStack(alignment: .top, spacing: 14) {
+                            ForEach(module.pendingFiles.prefix(8), id: \.self) { url in
+                                VStack(spacing: 3) {
+                                    Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+                                        .resizable()
+                                        .frame(width: 34, height: 34)
+                                    Text(url.lastPathComponent)
+                                        .font(.system(size: 8))
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                        .frame(width: 52)
+                                }
+                                .contextMenu {
+                                    Button("Remove") {
+                                        module.pendingFiles.removeAll { $0 == url }
+                                    }
+                                }
+                            }
+                        }
+                        .padding(10)
+                    }
+                }
+            if let status = module.statusMessage {
+                Text(status)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
             }
-            return true
         }
     }
 }

@@ -111,6 +111,7 @@ final class NotificationsModule: NotchModule, ObservableObject {
     let name = "Notifications"
     let icon = "bell.fill"
     let hasPanel = true
+    var preferredHeight: CGFloat { 180 }
 
     @Published private(set) var items: [NotificationItem] = []
     @Published private(set) var needsAccess = false
@@ -132,6 +133,14 @@ final class NotificationsModule: NotchModule, ObservableObject {
     }
 
     func panelView() -> AnyView { AnyView(NotificationsPanelView(module: self)) }
+
+    func headerBadge() -> AnyView? {
+        AnyView(
+            Text("\(items.count) recent")
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+        )
+    }
 
     func refresh() {
         // The query runs in ~ms, but keep it off the main actor anyway.

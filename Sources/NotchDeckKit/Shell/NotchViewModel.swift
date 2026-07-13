@@ -10,7 +10,7 @@ final class NotchViewModel: ObservableObject {
     @Published var isDropTargeted = false
 
     @Published var notchSize: CGSize
-    let expandedSize = CGSize(width: 640, height: 300)
+    let expandedSize = CGSize(width: 700, height: 348)
 
     private var hoverTask: Task<Void, Never>?
 

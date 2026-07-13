@@ -7,6 +7,7 @@ final class SystemMonitorModule: NotchModule, ObservableObject {
     let name = "System Monitor"
     let icon = "gauge.with.dots.needle.50percent"
     let hasPanel = true
+    var preferredHeight: CGFloat { 150 }
 
     @Published private(set) var cpuUsage: Double = 0
     @Published private(set) var memory: (used: Double, total: Double) = (0, 1)
