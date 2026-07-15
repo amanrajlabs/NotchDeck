@@ -405,6 +405,17 @@ expect(SnapZoneMath.tileIndex(at: CGPoint(x: tiles[2].midX, y: tiles[2].midY), s
 expect(SnapZoneMath.tileIndex(at: CGPoint(x: strip.minX - 50, y: strip.midY), strip: strip, count: 5) == nil, "miss outside strip")
 expect(SnapZoneMath.axPoint(fromCocoa: CGPoint(x: 10, y: 700), primaryScreenHeight: 800) == CGPoint(x: 10, y: 100), "cocoa→AX y-flip")
 
+// MARK: - KeyCombo
+
+// Cocoa flags: command = 1<<20, shift = 1<<17, option = 1<<19, control = 1<<18.
+expect(KeyCombo.carbonModifiers(fromCocoa: 1 << 20) == 256, "cmd → carbon cmdKey")
+expect(KeyCombo.carbonModifiers(fromCocoa: (1 << 20) | (1 << 17)) == 256 | 512, "cmd+shift")
+expect(KeyCombo.carbonModifiers(fromCocoa: (1 << 19) | (1 << 18)) == 2048 | 4096, "opt+ctrl")
+let combo = KeyCombo(keyCode: 45, carbonModifiers: 256 | 512) // ⇧⌘N
+expect(combo.display == "⇧⌘N", "display renders modifiers+key: \(combo.display)")
+let roundTrip = try? JSONDecoder().decode(KeyCombo.self, from: JSONEncoder().encode(combo))
+expect(roundTrip == combo, "KeyCombo codable round-trip")
+
 // MARK: - Summary
 
 if failures == 0 {
