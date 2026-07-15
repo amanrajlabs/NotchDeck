@@ -385,6 +385,26 @@ expect(gridDays.count == 42, "month grid always 6 weeks")
 expect(calendar.component(.weekday, from: gridDays[0].date) == 2, "grid starts on Monday")
 expect(gridDays.filter(\.inMonth).count == 31, "July has 31 in-month days")
 
+// MARK: - SnapLayout
+
+let visible = CGRect(x: 0, y: 0, width: 1000, height: 800)
+expect(SnapLayout.leftHalf.frame(in: visible) == CGRect(x: 0, y: 0, width: 500, height: 800), "left half")
+expect(SnapLayout.rightHalf.frame(in: visible) == CGRect(x: 500, y: 0, width: 500, height: 800), "right half")
+expect(SnapLayout.maximize.frame(in: visible) == visible, "maximize fills visible frame")
+expect(SnapLayout.centerThird.frame(in: visible).minX.rounded() == 333, "center third x")
+expect(SnapLayout.topLeftQuarter.frame(in: visible) == CGRect(x: 0, y: 400, width: 500, height: 400), "top-left quarter (AppKit origin bottom-left → top row has higher y)")
+expect(SnapLayout.bottomRightQuarter.frame(in: visible) == CGRect(x: 500, y: 0, width: 500, height: 400), "bottom-right quarter")
+
+let strip = SnapZoneMath.stripFrame(notch: CGRect(x: 653, y: 950, width: 206, height: 32), tileCount: 5)
+expect(strip.midX == 756, "strip centered on notch: \(strip.midX)")
+expect(strip.maxY == 950, "strip hangs below the notch bottom")
+let tiles = SnapZoneMath.tileRects(strip: strip, count: 5)
+expect(tiles.count == 5, "one rect per tile")
+expect(tiles[0].minX >= strip.minX && tiles[4].maxX <= strip.maxX, "tiles fit inside strip")
+expect(SnapZoneMath.tileIndex(at: CGPoint(x: tiles[2].midX, y: tiles[2].midY), strip: strip, count: 5) == 2, "hit test middle tile")
+expect(SnapZoneMath.tileIndex(at: CGPoint(x: strip.minX - 50, y: strip.midY), strip: strip, count: 5) == nil, "miss outside strip")
+expect(SnapZoneMath.axPoint(fromCocoa: CGPoint(x: 10, y: 700), primaryScreenHeight: 800) == CGPoint(x: 10, y: 100), "cocoa→AX y-flip")
+
 // MARK: - Summary
 
 if failures == 0 {
