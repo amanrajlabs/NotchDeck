@@ -184,6 +184,14 @@ final class NotchShellController {
                             height: notch.height + strip.height
                         )
                     )
+                } else if vm?.state == .expanded {
+                    // Drag ended while the dashboard is open — restore the
+                    // expanded frame (matching the $state sink) so it isn't
+                    // clipped to strip size.
+                    frame = NotchGeometry.panelFrame(
+                        notch: notch,
+                        expandedSize: vm?.expandedSize ?? notch.size
+                    )
                 } else {
                     frame = Self.stripFrame(notch: notch)
                 }

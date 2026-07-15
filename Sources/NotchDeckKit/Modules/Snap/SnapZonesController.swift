@@ -42,8 +42,13 @@ final class SnapZonesController {
             hide()
             return
         }
-        pendingWindow = monitor.draggedWindow
         let layouts = settings.snapLayouts
+        // No layouts enabled — nothing to offer; don't show an empty strip.
+        guard !layouts.isEmpty else {
+            hide()
+            return
+        }
+        pendingWindow = monitor.draggedWindow
         let strip = SnapZoneMath.stripFrame(notch: notch, tileCount: layouts.count)
         if vm.snapZones == nil { vm.snapZones = layouts }
         vm.snapHighlight = SnapZoneMath.tileIndex(at: point, strip: strip, count: layouts.count)
