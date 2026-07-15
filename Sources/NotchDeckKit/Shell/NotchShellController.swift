@@ -13,6 +13,7 @@ final class NotchShellController {
         let vm: NotchViewModel
         var notchRect: CGRect
         var cancellable: AnyCancellable?
+        var snapCancellable: AnyCancellable?
         var shrinkTask: Task<Void, Never>?
         var keyObserver: NSObjectProtocol?
     }
@@ -21,6 +22,7 @@ final class NotchShellController {
     private let settings: SettingsStore
     private var moduleSet: ModuleSet?
     private var screenPanels: [ScreenPanel] = []
+    private var snapController: SnapZonesController?
 
     /// Extra width on each side of the notch reserved for live activities.
     static let stripSideMargin: CGFloat = 150
@@ -48,12 +50,37 @@ final class NotchShellController {
         modules.pomodoro.tasks = modules.tasks
         registry.register(modules.all)
         rebuildPanels()
+
+        let snap = SnapZonesController(settings: settings)
+        snap.target = { [weak self] point in self?.snapTarget(near: point) }
+        snapController = snap
+        snap.syncEnabled()
+    }
+
+    /// The panel whose screen contains `point`, for the snap controller to
+    /// show tiles on and read the notch frame from.
+    func snapTarget(near point: CGPoint) -> (vm: NotchViewModel, notch: CGRect, screen: NSScreen)? {
+        for entry in screenPanels {
+            guard let screen = NSScreen.screens.first(where: { $0.frame.contains(point) })
+            else { continue }
+            if entry.notchRect.midX >= screen.frame.minX, entry.notchRect.midX <= screen.frame.maxX {
+                return (entry.vm, entry.notchRect, screen)
+            }
+        }
+        return nil
+    }
+
+    /// Pass-through so Settings can re-sync the drag monitor after the user
+    /// toggles Snap Zones or grants Accessibility.
+    func snapControllerSyncEnabled() {
+        snapController?.syncEnabled()
     }
 
     func rebuildPanels() {
         for entry in screenPanels {
             entry.shrinkTask?.cancel()
             entry.cancellable?.cancel()
+            entry.snapCancellable?.cancel()
             if let keyObserver = entry.keyObserver {
                 NotificationCenter.default.removeObserver(keyObserver)
             }
@@ -136,6 +163,31 @@ final class NotchShellController {
                         panel.setFrame(Self.stripFrame(notch: notch), display: true)
                     }
                 }
+            }
+        entry.snapCancellable = vm.$snapZones
+            .map { $0 != nil }
+            .removeDuplicates()
+            .sink { [weak self, weak panel, weak vm] visible in
+                guard let self, let panel else { return }
+                guard let index = self.screenPanels.firstIndex(where: { $0.panel === panel })
+                else { return }
+                self.screenPanels[index].shrinkTask?.cancel()
+                let notch = self.screenPanels[index].notchRect
+                let frame: CGRect
+                if visible {
+                    let count = vm?.snapZones?.count ?? self.settings.snapLayouts.count
+                    let strip = SnapZoneMath.stripFrame(notch: notch, tileCount: count)
+                    frame = NotchGeometry.panelFrame(
+                        notch: notch,
+                        expandedSize: CGSize(
+                            width: max(strip.width, notch.width + Self.stripSideMargin * 2),
+                            height: notch.height + strip.height
+                        )
+                    )
+                } else {
+                    frame = Self.stripFrame(notch: notch)
+                }
+                panel.setFrame(frame, display: true)
             }
         screenPanels.append(entry)
         panel.orderFrontRegardless()

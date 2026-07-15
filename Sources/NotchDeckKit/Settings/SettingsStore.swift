@@ -50,12 +50,31 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    @Published var snapZonesEnabled: Bool {
+        didSet { defaults.set(snapZonesEnabled, forKey: "snapZonesEnabled") }
+    }
+
+    @Published var snapLayouts: [SnapLayout] {
+        didSet {
+            if let data = try? JSONEncoder().encode(snapLayouts) {
+                defaults.set(data, forKey: "snapLayouts")
+            }
+        }
+    }
+
     init() {
         hudSuppressSystemBezel = defaults.bool(forKey: "hudSuppressSystemBezel")
         showOnAllDisplays = defaults.bool(forKey: "showOnAllDisplays")
         showInScreenCapture = defaults.object(forKey: "showInScreenCapture") as? Bool ?? true
         launchAtLogin = SMAppService.mainApp.status == .enabled
         notchNudge = defaults.double(forKey: "notchNudge")
+        snapZonesEnabled = defaults.bool(forKey: "snapZonesEnabled")
+        if let data = defaults.data(forKey: "snapLayouts"),
+           let decoded = try? JSONDecoder().decode([SnapLayout].self, from: data), !decoded.isEmpty {
+            snapLayouts = decoded
+        } else {
+            snapLayouts = [.leftHalf, .maximize, .rightHalf, .leftThird, .rightThird]
+        }
     }
 
     func isModuleEnabled(_ id: String) -> Bool {

@@ -12,6 +12,10 @@ final class NotchViewModel: ObservableObject {
     @Published var notchSize: CGSize
     let expandedSize = CGSize(width: 700, height: 348)
 
+    /// Non-nil while a window drag near the top edge should show snap tiles.
+    @Published var snapZones: [SnapLayout]?
+    @Published var snapHighlight: Int?
+
     private var hoverTask: Task<Void, Never>?
 
     init(notchSize: CGSize) {

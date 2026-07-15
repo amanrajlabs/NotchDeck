@@ -49,7 +49,10 @@ struct NotchRootView: View {
     var body: some View {
         VStack(spacing: 0) {
             Group {
-                if vm.state == .expanded {
+                if vm.snapZones != nil {
+                    SnapZoneStripView(vm: vm)
+                        .transition(.opacity)
+                } else if vm.state == .expanded {
                     ExpandedView(vm: vm, registry: registry, modules: modules)
                         .transition(.scale(scale: 0.85, anchor: .top).combined(with: .opacity))
                 } else {

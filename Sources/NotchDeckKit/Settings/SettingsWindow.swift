@@ -63,6 +63,29 @@ struct SettingsView: View {
                     }
                 }
             }
+            Section("Snap Zones") {
+                Toggle("Snap windows from the notch", isOn: Binding(
+                    get: { settings.snapZonesEnabled },
+                    set: { on in
+                        if on, !AXWindowSnapper.isTrusted(prompt: true) {
+                            // Prompt shown; user must grant in System Settings, then re-toggle.
+                            settings.snapZonesEnabled = false
+                            return
+                        }
+                        settings.snapZonesEnabled = on
+                        NotchShellControllerShared.instance?.snapControllerSyncEnabled()
+                    }
+                ))
+                ForEach(SnapLayout.allCases, id: \.self) { layout in
+                    Toggle(layout.title, isOn: Binding(
+                        get: { settings.snapLayouts.contains(layout) },
+                        set: { on in
+                            if on { settings.snapLayouts.append(layout) }
+                            else { settings.snapLayouts.removeAll { $0 == layout } }
+                        }
+                    ))
+                }
+            }
             ForEach(registry.enabledModules, id: \.id) { module in
                 module.settingsView()
             }
