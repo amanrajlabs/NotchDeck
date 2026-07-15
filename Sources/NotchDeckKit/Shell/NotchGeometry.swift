@@ -10,22 +10,25 @@ public enum NotchGeometry {
         screenFrame: CGRect,
         safeTopInset: CGFloat,
         auxTopLeftWidth: CGFloat?,
-        auxTopRightWidth: CGFloat?
+        auxTopRightWidth: CGFloat?,
+        verticalNudge: CGFloat = 0
     ) -> CGRect {
         if let left = auxTopLeftWidth, let right = auxTopRightWidth, safeTopInset > 0 {
+            let height = max(8, safeTopInset - verticalNudge)
             return CGRect(
                 x: screenFrame.minX + left,
-                y: screenFrame.maxY - safeTopInset,
+                y: screenFrame.maxY - height,
                 width: screenFrame.width - left - right,
-                height: safeTopInset
+                height: height
             )
         }
         let s = simulatedNotchSize
+        let height = max(8, s.height - verticalNudge)
         return CGRect(
             x: screenFrame.midX - s.width / 2,
-            y: screenFrame.maxY - s.height,
+            y: screenFrame.maxY - height,
             width: s.width,
-            height: s.height
+            height: height
         )
     }
 

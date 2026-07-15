@@ -44,6 +44,18 @@ expect(frame.size == CGSize(width: 640, height: 300), "panel frame takes expande
 let wide = NotchGeometry.panelFrame(notch: CGRect(x: 0, y: 950, width: 800, height: 32), expandedSize: CGSize(width: 640, height: 300))
 expect(wide.width == 800, "panel frame never narrower than notch")
 
+let nudged = NotchGeometry.notchRect(
+    screenFrame: screen, safeTopInset: 32, auxTopLeftWidth: 653, auxTopRightWidth: 653,
+    verticalNudge: 4
+)
+expect(nudged.maxY == screen.maxY, "nudge keeps rect pinned to top edge")
+expect(nudged.height == 28, "positive nudge shrinks height so bottom rises: \(nudged.height)")
+let overNudged = NotchGeometry.notchRect(
+    screenFrame: screen, safeTopInset: 32, auxTopLeftWidth: 653, auxTopRightWidth: 653,
+    verticalNudge: 100
+)
+expect(overNudged.height >= 8, "nudge clamps to minimum height")
+
 // MARK: - MediaStateMapper
 
 let spotifyInfo = MediaStateMapper.trackInfo(

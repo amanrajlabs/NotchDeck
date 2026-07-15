@@ -43,11 +43,19 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    @Published var notchNudge: Double {
+        didSet {
+            defaults.set(notchNudge, forKey: "notchNudge")
+            onDisplayConfigChange?()
+        }
+    }
+
     init() {
         hudSuppressSystemBezel = defaults.bool(forKey: "hudSuppressSystemBezel")
         showOnAllDisplays = defaults.bool(forKey: "showOnAllDisplays")
         showInScreenCapture = defaults.object(forKey: "showInScreenCapture") as? Bool ?? true
         launchAtLogin = SMAppService.mainApp.status == .enabled
+        notchNudge = defaults.double(forKey: "notchNudge")
     }
 
     func isModuleEnabled(_ id: String) -> Bool {

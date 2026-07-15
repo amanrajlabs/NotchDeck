@@ -161,7 +161,8 @@ final class NotchShellController {
             screenFrame: screen.frame,
             safeTopInset: screen.safeAreaInsets.top,
             auxTopLeftWidth: hasNotch ? screen.auxiliaryTopLeftArea?.width : nil,
-            auxTopRightWidth: hasNotch ? screen.auxiliaryTopRightArea?.width : nil
+            auxTopRightWidth: hasNotch ? screen.auxiliaryTopRightArea?.width : nil,
+            verticalNudge: CGFloat(UserDefaults.standard.double(forKey: "notchNudge"))
         )
     }
 }

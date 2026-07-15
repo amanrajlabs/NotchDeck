@@ -47,6 +47,11 @@ struct SettingsView: View {
                 Toggle("Show on all displays", isOn: $settings.showOnAllDisplays)
                 Toggle("Show notch in screenshots & recordings", isOn: $settings.showInScreenCapture)
                 Toggle("Replace system volume/brightness bezel (experimental)", isOn: $settings.hudSuppressSystemBezel)
+                HStack {
+                    Text("Nudge notch vs menu bar")
+                    Slider(value: $settings.notchNudge, in: -8...12, step: 1)
+                    Text("\(Int(settings.notchNudge)) pt").monospacedDigit()
+                }
             }
             Section("Modules") {
                 ForEach(registry.modules, id: \.id) { module in
