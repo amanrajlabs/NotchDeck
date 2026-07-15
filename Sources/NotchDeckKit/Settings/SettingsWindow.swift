@@ -45,6 +45,7 @@ struct SettingsView: View {
             Section("General") {
                 Toggle("Launch at login", isOn: $settings.launchAtLogin)
                 Toggle("Show on all displays", isOn: $settings.showOnAllDisplays)
+                Toggle("Show notch in screenshots & recordings", isOn: $settings.showInScreenCapture)
                 Toggle("Replace system volume/brightness bezel (experimental)", isOn: $settings.hudSuppressSystemBezel)
             }
             Section("Modules") {

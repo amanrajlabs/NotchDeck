@@ -79,6 +79,7 @@ final class NotchShellController {
         let vm = NotchViewModel(notchSize: notchRect.size)
 
         let panel = NotchPanel(frame: Self.stripFrame(notch: notchRect))
+        panel.sharingType = settings.showInScreenCapture ? .readOnly : .none
         panel.acceptsMouseMovedEvents = true
         let root = NotchRootView(vm: vm, registry: registry, modules: modules)
         let hosting = HoverHostingView(rootView: root)

@@ -19,6 +19,13 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    @Published var showInScreenCapture: Bool {
+        didSet {
+            defaults.set(showInScreenCapture, forKey: "showInScreenCapture")
+            onDisplayConfigChange?()
+        }
+    }
+
     @Published var launchAtLogin: Bool {
         didSet {
             guard oldValue != launchAtLogin else { return }
@@ -39,6 +46,7 @@ final class SettingsStore: ObservableObject {
     init() {
         hudSuppressSystemBezel = defaults.bool(forKey: "hudSuppressSystemBezel")
         showOnAllDisplays = defaults.bool(forKey: "showOnAllDisplays")
+        showInScreenCapture = defaults.object(forKey: "showInScreenCapture") as? Bool ?? true
         launchAtLogin = SMAppService.mainApp.status == .enabled
     }
 
