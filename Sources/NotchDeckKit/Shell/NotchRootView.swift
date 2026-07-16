@@ -19,7 +19,7 @@ struct ModuleSet {
     let notifications: NotificationsModule
     let translation: TranslationModule
     let git: GitModule
-    let claude: ClaudeModule
+    let aiCoding: AICodingModule
 
     init(settings: SettingsStore) {
         dashboard = DashboardModule()
@@ -37,11 +37,11 @@ struct ModuleSet {
         notifications = NotificationsModule()
         translation = TranslationModule()
         git = GitModule()
-        claude = ClaudeModule()
+        aiCoding = AICodingModule(settings: settings)
     }
 
     var all: [any NotchModule] {
-        [dashboard, media, calendar, tasks, notes, pomodoro, dayProgress, notifications, git, claude, translation, system, screenTime, drop, bluetooth, hud]
+        [dashboard, media, calendar, tasks, notes, pomodoro, dayProgress, notifications, git, aiCoding, translation, system, screenTime, drop, bluetooth, hud]
     }
 }
 

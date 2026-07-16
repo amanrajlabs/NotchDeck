@@ -143,6 +143,82 @@ expect(BTBatteryScanner.parseSystemProfiler(root: [:]) == [], "system_profiler e
 expect(BTBatteryScanner.percentValue("77%") == 77, "percentValue strips % sign")
 expect(BTBatteryScanner.percentValue("120%") == nil, "percentValue rejects out-of-range")
 
+// MARK: - AIStatusRule
+let ref = Date(timeIntervalSince1970: 1_000_000)
+expect(AIStatusRule.status(hasPendingCall: true, finished: false,
+    lastActivity: ref.addingTimeInterval(-10), now: ref) == .waitingApproval,
+    "pending call past threshold → waitingApproval")
+expect(AIStatusRule.status(hasPendingCall: true, finished: false,
+    lastActivity: ref.addingTimeInterval(-1), now: ref) == .running,
+    "pending call within threshold → running")
+expect(AIStatusRule.status(hasPendingCall: false, finished: true,
+    lastActivity: ref.addingTimeInterval(-5), now: ref) == .done,
+    "finished + recent → done")
+expect(AIStatusRule.status(hasPendingCall: false, finished: false,
+    lastActivity: ref.addingTimeInterval(-500), now: ref) == .idle,
+    "no activity, stale → idle")
+
+// MARK: - CodexRolloutParser
+let codexWaiting = """
+{"type":"session_meta","payload":{"cwd":"/Users/aman/Desktop/Proj"}}
+{"type":"turn_context","payload":{"model":"gpt-5.5","cwd":"/Users/aman/Desktop/Proj"}}
+{"type":"event_msg","payload":{"type":"agent_message","message":"Running the build now."}}
+{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"total_tokens":24030}}}}
+{"type":"response_item","payload":{"type":"function_call","name":"exec_command","call_id":"call_A","arguments":"{}"}}
+"""
+let cw = CodexRolloutParser.parse(lines: codexWaiting)
+expect(cw.model == "gpt-5.5", "codex model from turn_context")
+expect(cw.cwd == "/Users/aman/Desktop/Proj", "codex cwd")
+expect(cw.tokens == 24030, "codex total tokens")
+expect(cw.lastMessage == "Running the build now.", "codex last agent message")
+expect(cw.hasPendingCall == true, "codex unmatched function_call → pending")
+expect(cw.finished == false, "codex not finished")
+expect(CodexRolloutParser.projectName(fromCwd: "/Users/aman/Desktop/Proj") == "Proj", "codex project name")
+
+let codexDone = codexWaiting + """
+
+{"type":"response_item","payload":{"type":"function_call_output","call_id":"call_A","output":"ok"}}
+{"type":"event_msg","payload":{"type":"task_complete","last_agent_message":"Done."}}
+"""
+let cd = CodexRolloutParser.parse(lines: codexDone)
+expect(cd.hasPendingCall == false, "codex matched call → not pending")
+expect(cd.finished == true, "codex task_complete → finished")
+
+let codexAssistantMsg = """
+{"type":"turn_context","payload":{"model":"gpt-5.5"}}
+{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Ready to review the diff."},{"type":"refusal","text":"n/a"}]}}
+"""
+let cam = CodexRolloutParser.parse(lines: codexAssistantMsg)
+expect(cam.lastMessage == "Ready to review the diff.", "codex extracts assistant response_item message")
+
+// MARK: - ClaudeCodeProvider
+
+let ccp = ClaudeCodeProvider()
+expect(ccp.id == "claude-code", "claude provider id")
+expect(ccp.watchRoots().first?.lastPathComponent == "projects", "claude watch root is ~/.claude/projects")
+_ = ccp.scan()   // must not crash on the live filesystem
+
+// MARK: - CodexProvider
+
+let cxp = CodexProvider()
+expect(cxp.id == "codex", "codex provider id")
+expect(cxp.watchRoots().first?.lastPathComponent == "sessions", "codex watch root is ~/.codex/sessions")
+_ = cxp.scan()   // must not crash on the live filesystem
+
+// MARK: - AICodingMigration
+let migrated = AICodingMigration.migrate(
+    order: ["media", "claude", "calendar"], defaultModule: "claude")
+expect(migrated.order == ["media", "ai-coding", "calendar"], "claude id migrated in order")
+expect(migrated.defaultModule == "ai-coding", "claude default migrated")
+let untouched = AICodingMigration.migrate(order: ["media"], defaultModule: "media")
+expect(untouched.order == ["media"], "no claude id → order unchanged")
+
+// MARK: - TerminalFocus
+expect(TerminalFocus.isTerminal("com.apple.Terminal") == true, "Terminal.app recognized")
+expect(TerminalFocus.isTerminal("com.mitchellh.ghostty") == true, "Ghostty recognized")
+expect(TerminalFocus.isTerminal("com.apple.Safari") == false, "Safari not a terminal")
+expect(TerminalFocus.isTerminal(nil) == false, "nil bundle id not a terminal")
+
 // MARK: - MeetingDetector
 
 expect(
@@ -407,6 +483,19 @@ let previewTail = """
 let previewStats = ClaudeSessionParser.parse(tail: previewTail)
 expect(previewStats.preview == "Fixed the bug in the parser.", "last assistant text wins as preview")
 expect(previewStats.assistantMessages == 2, "preview tail counts messages")
+
+// MARK: - Claude pending tool_use
+let claudePending = """
+{"type":"assistant","message":{"model":"claude-opus-4-8","content":[{"type":"tool_use","id":"tu_1","name":"Bash"}]}}
+"""
+expect(ClaudeSessionParser.parse(tail: claudePending).hasPendingToolUse == true,
+    "unmatched tool_use → pending")
+let claudeResolved = claudePending + """
+
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"tu_1"}]}}
+"""
+expect(ClaudeSessionParser.parse(tail: claudeResolved).hasPendingToolUse == false,
+    "matched tool_result → not pending")
 
 // MARK: - MonthGrid days
 
