@@ -70,7 +70,9 @@ final class AICodingModule: NotchModule, ObservableObject {
         notifyWaiting(found)   // implemented in Task 9
     }
 
-    func focus(_ session: AISession) {}
+    func focus(_ session: AISession) {
+        TerminalFocus.focusFrontmostTerminal()
+    }
 
     private func notifyWaiting(_ found: [AISession]) {
         guard Bundle.main.bundleIdentifier != nil else { return }

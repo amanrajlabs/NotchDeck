@@ -213,6 +213,12 @@ expect(migrated.defaultModule == "ai-coding", "claude default migrated")
 let untouched = AICodingMigration.migrate(order: ["media"], defaultModule: "media")
 expect(untouched.order == ["media"], "no claude id → order unchanged")
 
+// MARK: - TerminalFocus
+expect(TerminalFocus.isTerminal("com.apple.Terminal") == true, "Terminal.app recognized")
+expect(TerminalFocus.isTerminal("com.mitchellh.ghostty") == true, "Ghostty recognized")
+expect(TerminalFocus.isTerminal("com.apple.Safari") == false, "Safari not a terminal")
+expect(TerminalFocus.isTerminal(nil) == false, "nil bundle id not a terminal")
+
 // MARK: - MeetingDetector
 
 expect(
