@@ -461,6 +461,21 @@ expect(EventSearch.matches(query: "stand", in: ["Standup", nil]), "case-insensit
 expect(EventSearch.matches(query: "CAFÉ", in: ["team cafe sync"]), "diacritic-insensitive")
 expect(!EventSearch.matches(query: "retro", in: ["Standup", "Room 4"]), "no match → false")
 
+// MARK: - DayTimeline
+
+let dtDayStart = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date())!
+let dtDayEnd = Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: Date())!
+let dtNoon = Calendar.current.date(bySettingHour: 13, minute: 30, second: 0, of: Date())!
+expect(DayTimeline.fraction(of: dtNoon, dayStart: dtDayStart, dayEnd: dtDayEnd) == 0.5, "13:30 is halfway through 9–18")
+expect(DayTimeline.fraction(of: dtDayStart.addingTimeInterval(-60), dayStart: dtDayStart, dayEnd: dtDayEnd) == nil, "before start → nil")
+let dtBlocks = DayTimeline.blocks(
+    events: [(start: dtDayStart.addingTimeInterval(3_600), end: dtDayStart.addingTimeInterval(7_200)),
+             (start: dtDayEnd.addingTimeInterval(3_600), end: dtDayEnd.addingTimeInterval(7_200))],
+    dayStart: dtDayStart, dayEnd: dtDayEnd
+)
+expect(dtBlocks.count == 1, "out-of-range event dropped")
+expect(abs(dtBlocks[0].startFraction - 1.0 / 9.0) < 0.001, "block start fraction")
+
 // MARK: - TaskTrash
 
 let oldEntry = TrashedTask(id: "1", title: "old", deletedAt: Date(timeIntervalSinceNow: -31 * 86_400))
