@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import UserNotifications
 
@@ -89,6 +90,7 @@ final class PomodoroModule: NotchModule, ObservableObject {
     @Published private(set) var engine = PomodoroEngine()
     @Published var activePresetID = "work"
     @Published var focusTarget: String?
+    @Published var overlayUntil: Date?
 
     var preferredHeight: CGFloat { 190 }
 
@@ -114,9 +116,23 @@ final class PomodoroModule: NotchModule, ObservableObject {
     }
 
     func liveActivityView() -> AnyView? {
+        if let until = overlayUntil, until > Date() {
+            return AnyView(
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 11)).foregroundStyle(.green)
+                    Text("Timer done")
+                        .font(.system(size: 10, weight: .bold))
+                }
+                .padding(.horizontal, 10)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            )
+        }
         guard engine.isRunning else { return nil }
         return AnyView(PomodoroLivePill(module: self))
     }
+
+    func settingsView() -> AnyView { AnyView(PomodoroSettingsView(module: self)) }
 
     func apply(_ preset: Preset) {
         pause()
@@ -172,6 +188,10 @@ final class PomodoroModule: NotchModule, ObservableObject {
     }
 
     private func notifyPhaseEnd(_ finished: PomodoroEngine.Phase) {
+        if UserDefaults.standard.object(forKey: "pomodoro.sound") as? Bool ?? true {
+            NSSound(named: "Glass")?.play()
+        }
+        overlayUntil = Date().addingTimeInterval(8)
         guard Bundle.main.bundleIdentifier != nil else { return }
         let content = UNMutableNotificationContent()
         content.title = finished == .work ? "Work session done" : "Break over"
@@ -193,6 +213,19 @@ enum PomodoroShared {
 }
 
 // MARK: - Views
+
+struct PomodoroSettingsView: View {
+    @ObservedObject var module: PomodoroModule
+
+    var body: some View {
+        Section("Pomodoro") {
+            Toggle("Play sound when a session ends", isOn: Binding(
+                get: { UserDefaults.standard.object(forKey: "pomodoro.sound") as? Bool ?? true },
+                set: { UserDefaults.standard.set($0, forKey: "pomodoro.sound") }
+            ))
+        }
+    }
+}
 
 struct PomodoroLivePill: View {
     @ObservedObject var module: PomodoroModule
