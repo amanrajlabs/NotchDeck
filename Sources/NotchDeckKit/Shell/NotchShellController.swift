@@ -23,6 +23,8 @@ final class NotchShellController {
     private var moduleSet: ModuleSet?
     private var screenPanels: [ScreenPanel] = []
     private var snapController: SnapZonesController?
+    private var snoozeTask: Task<Void, Never>?
+    private(set) var isSnoozed = false
 
     /// Extra width on each side of the notch reserved for live activities.
     static let stripSideMargin: CGFloat = 150
@@ -55,6 +57,46 @@ final class NotchShellController {
         snap.target = { [weak self] point in self?.snapTarget(near: point) }
         snapController = snap
         snap.syncEnabled()
+
+        ShortcutSettings.shared.rebindAll(shell: self)
+    }
+
+    /// Expands or collapses the first display's panel — used by the "toggle
+    /// notch" global shortcut.
+    func toggleFirstPanel() {
+        guard let entry = screenPanels.first else { return }
+        entry.vm.state == .expanded ? entry.vm.collapse() : entry.vm.expand()
+    }
+
+    /// Steps the expanded module forward/back through `registry.panelModules`
+    /// — used by the "next/prev module" global shortcuts.
+    func cycleModule(by delta: Int) {
+        guard let entry = screenPanels.first else { return }
+        let panels = registry.panelModules
+        guard !panels.isEmpty else { return }
+        let currentIndex = panels.firstIndex { $0.id == entry.vm.selectedModuleID } ?? 0
+        let next = (currentIndex + delta + panels.count) % panels.count
+        entry.vm.expand(showing: panels[next].id)
+    }
+
+    /// Hides all notch panels and schedules an automatic wake after
+    /// `minutes`.
+    func snooze(minutes: Int) {
+        isSnoozed = true
+        snoozeTask?.cancel()
+        for entry in screenPanels { entry.panel.orderOut(nil) }
+        snoozeTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(minutes * 60))
+            guard !Task.isCancelled else { return }
+            self?.wake()
+        }
+    }
+
+    /// Cancels any pending snooze wake and re-shows all notch panels.
+    func wake() {
+        snoozeTask?.cancel()
+        isSnoozed = false
+        for entry in screenPanels { entry.panel.orderFrontRegardless() }
     }
 
     /// The panel whose screen contains `point`, for the snap controller to

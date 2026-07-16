@@ -39,6 +39,7 @@ final class SettingsWindowController {
 struct SettingsView: View {
     @ObservedObject var registry: ModuleRegistry
     @ObservedObject var settings: SettingsStore
+    @ObservedObject private var shortcuts = ShortcutSettings.shared
 
     var body: some View {
         Form {
@@ -86,12 +87,30 @@ struct SettingsView: View {
                     ))
                 }
             }
+            Section("Keyboard Shortcuts") {
+                ShortcutRecorderField(title: "Toggle notch", combo: $shortcuts.toggleNotch)
+                ShortcutRecorderField(title: "Next module", combo: $shortcuts.nextModule)
+                ShortcutRecorderField(title: "Previous module", combo: $shortcuts.prevModule)
+                ShortcutRecorderField(title: "Snooze / wake notch", combo: $shortcuts.snooze)
+                Stepper("Snooze duration: \(shortcuts.snoozeMinutes) min",
+                        value: $shortcuts.snoozeMinutes, in: 5...120, step: 5)
+            }
+            .onChange(of: shortcuts.toggleNotch) { rebind() }
+            .onChange(of: shortcuts.nextModule) { rebind() }
+            .onChange(of: shortcuts.prevModule) { rebind() }
+            .onChange(of: shortcuts.snooze) { rebind() }
             ForEach(registry.enabledModules, id: \.id) { module in
                 module.settingsView()
             }
         }
         .formStyle(.grouped)
         .frame(width: 460, height: 520)
+    }
+
+    private func rebind() {
+        if let shell = NotchShellControllerShared.instance {
+            ShortcutSettings.shared.rebindAll(shell: shell)
+        }
     }
 }
 
