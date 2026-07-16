@@ -167,6 +167,30 @@ final class NotificationsModule: NotchModule, ObservableObject {
         else { return }
         NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
     }
+
+    /// Pill for the collapsed strip's rotating trailing slot: app name +
+    /// count of items delivered in the last 15 minutes. Nil when none.
+    func glanceView() -> AnyView? {
+        let recent = items.filter { $0.date.timeIntervalSinceNow > -900 }
+        guard let newest = recent.first else { return nil }
+        let appName = NSWorkspace.shared
+            .urlForApplication(withBundleIdentifier: newest.appBundleID)
+            .map { FileManager.default.displayName(atPath: $0.path) }
+            ?? newest.appBundleID.components(separatedBy: ".").last?.capitalized
+            ?? "New"
+        return AnyView(
+            HStack(spacing: 6) {
+                Image(systemName: "bell.badge.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(Theme.accent)
+                Text(recent.count == 1 ? appName : "\(recent.count) new")
+                    .font(.system(size: 10, weight: .semibold))
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        )
+    }
 }
 
 @MainActor

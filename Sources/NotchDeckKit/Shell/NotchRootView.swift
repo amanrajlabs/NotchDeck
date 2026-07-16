@@ -95,13 +95,23 @@ struct CollapsedStripView: View {
     static let extensionWidth: CGFloat = 120
 
     var body: some View {
+        // The only timer this view introduces: a 6 s UI-only tick that
+        // drives which live activity occupies the trailing slot. It only
+        // exists while the collapsed strip is on-screen and is coalesced
+        // by SwiftUI — no polling of any module state happens here.
+        TimelineView(.periodic(from: .now, by: 6)) { context in
+            strip(tick: Int(context.date.timeIntervalSinceReferenceDate / 6))
+        }
+    }
+
+    private func strip(tick: Int) -> some View {
         let leading = leadingActivity
-        let trailing = trailingActivity
+        let trailing = trailingActivity(tick: tick)
         let leadW: CGFloat = leading == nil ? 0 : Self.extensionWidth
         let trailW: CGFloat = trailing == nil ? 0 : Self.extensionWidth
         let width = vm.notchSize.width + leadW + trailW
 
-        NotchShape()
+        return NotchShape()
             .fill(Color.black)
             .frame(width: width, height: vm.notchSize.height)
             .overlay {
@@ -131,23 +141,23 @@ struct CollapsedStripView: View {
         return modules.media.liveActivityView()
     }
 
-    private var trailingActivity: AnyView? {
+    /// HUD interrupts always win; otherwise round-robins through every
+    /// enabled module with a live activity or glance, 6 s per candidate.
+    private func trailingActivity(tick: Int) -> AnyView? {
         if hud.event != nil, registry.enabledIDs.contains(modules.hud.id) {
             return AnyView(HUDLiveView(controller: hud))
         }
+        var candidates: [AnyView] = []
         if registry.enabledIDs.contains(modules.pomodoro.id),
-           let pomodoro = modules.pomodoro.liveActivityView() {
-            return pomodoro
-        }
+           let v = modules.pomodoro.liveActivityView() { candidates.append(v) }
         if registry.enabledIDs.contains(modules.calendar.id),
-           let cal = modules.calendar.liveActivityView() {
-            return cal
-        }
+           let v = modules.calendar.liveActivityView() { candidates.append(v) }
         if registry.enabledIDs.contains(modules.bluetooth.id),
-           let bt = modules.bluetooth.liveActivityView() {
-            return bt
-        }
-        return nil
+           let v = modules.bluetooth.liveActivityView() { candidates.append(v) }
+        if registry.enabledIDs.contains(modules.notifications.id),
+           let v = modules.notifications.glanceView() { candidates.append(v) }
+        guard let index = LiveRotation.pick(count: candidates.count, tick: tick) else { return nil }
+        return candidates[index]
     }
 }
 

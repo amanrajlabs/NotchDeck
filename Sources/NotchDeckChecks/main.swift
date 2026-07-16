@@ -448,6 +448,12 @@ if let archive = try? DropActionRunner.zip([payload]),
 }
 try? FileManager.default.removeItem(at: tempDir)
 
+// MARK: - LiveRotation
+
+expect(LiveRotation.pick(count: 0, tick: 7) == nil, "no sources → nil")
+expect(LiveRotation.pick(count: 3, tick: 0) == 0, "tick 0 → first")
+expect(LiveRotation.pick(count: 3, tick: 4) == 1, "wraps modulo count")
+
 // MARK: - Summary
 
 if failures == 0 {
