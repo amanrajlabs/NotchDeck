@@ -62,6 +62,14 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    @Published var mediaHoverControls: Bool {
+        didSet { defaults.set(mediaHoverControls, forKey: "mediaHoverControls") }
+    }
+
+    @Published var mediaVisualization: String {
+        didSet { defaults.set(mediaVisualization, forKey: "mediaVisualization") }
+    }
+
     init() {
         hudSuppressSystemBezel = defaults.bool(forKey: "hudSuppressSystemBezel")
         showOnAllDisplays = defaults.bool(forKey: "showOnAllDisplays")
@@ -75,6 +83,8 @@ final class SettingsStore: ObservableObject {
         } else {
             snapLayouts = [.leftHalf, .maximize, .rightHalf, .leftThird, .rightThird]
         }
+        mediaHoverControls = defaults.object(forKey: "mediaHoverControls") as? Bool ?? true
+        mediaVisualization = defaults.string(forKey: "mediaVisualization") ?? "bars"
     }
 
     func isModuleEnabled(_ id: String) -> Bool {

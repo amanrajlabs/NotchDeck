@@ -53,6 +53,11 @@ struct SettingsView: View {
                     Slider(value: $settings.notchNudge, in: -8...12, step: 1)
                     Text("\(Int(settings.notchNudge)) pt").monospacedDigit()
                 }
+                Toggle("Show playback controls when hovering the strip", isOn: $settings.mediaHoverControls)
+                Picker("Media visualization", selection: $settings.mediaVisualization) {
+                    Text("Bars").tag("bars")
+                    Text("Spectrum").tag("spectrum")
+                }
             }
             Section("Modules") {
                 ForEach(registry.modules, id: \.id) { module in
