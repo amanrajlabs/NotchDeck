@@ -143,6 +143,21 @@ expect(BTBatteryScanner.parseSystemProfiler(root: [:]) == [], "system_profiler e
 expect(BTBatteryScanner.percentValue("77%") == 77, "percentValue strips % sign")
 expect(BTBatteryScanner.percentValue("120%") == nil, "percentValue rejects out-of-range")
 
+// MARK: - AIStatusRule
+let ref = Date(timeIntervalSince1970: 1_000_000)
+expect(AIStatusRule.status(hasPendingCall: true, finished: false,
+    lastActivity: ref.addingTimeInterval(-10), now: ref) == .waitingApproval,
+    "pending call past threshold → waitingApproval")
+expect(AIStatusRule.status(hasPendingCall: true, finished: false,
+    lastActivity: ref.addingTimeInterval(-1), now: ref) == .running,
+    "pending call within threshold → running")
+expect(AIStatusRule.status(hasPendingCall: false, finished: true,
+    lastActivity: ref.addingTimeInterval(-5), now: ref) == .done,
+    "finished + recent → done")
+expect(AIStatusRule.status(hasPendingCall: false, finished: false,
+    lastActivity: ref.addingTimeInterval(-500), now: ref) == .idle,
+    "no activity, stale → idle")
+
 // MARK: - MeetingDetector
 
 expect(
