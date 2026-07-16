@@ -46,6 +46,11 @@ public final class DirectoryWatcher {
         self.stream = nil
     }
 
+    // Safety net: if a running watcher is dropped without stop(), release the
+    // stream + retained Box so neither the dispatch registration nor the
+    // callback closure leaks.
+    deinit { stop() }
+
     private final class Box {
         let onChange: @Sendable () -> Void
         init(_ onChange: @escaping @Sendable () -> Void) { self.onChange = onChange }
