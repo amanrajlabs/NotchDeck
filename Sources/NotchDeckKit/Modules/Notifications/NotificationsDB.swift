@@ -117,7 +117,8 @@ final class NotificationsModule: NotchModule, ObservableObject {
     @Published private(set) var needsAccess = false
     @Published private(set) var unsupported = false
     private var timer: Timer?
-    private var dismissedIDs: Set<String> = []
+    private var dismissedOrder: [String] = []   // dismissal order, oldest→newest
+    private var dismissedIDs: Set<String> = []  // O(1) membership for the refresh filter
 
     func activate() {
         loadDismissed()
@@ -129,21 +130,31 @@ final class NotificationsModule: NotchModule, ObservableObject {
     }
 
     private func loadDismissed() {
-        dismissedIDs = Set(UserDefaults.standard.stringArray(forKey: "notifications.dismissed") ?? [])
+        let stored = UserDefaults.standard.stringArray(forKey: "notifications.dismissed") ?? []
+        dismissedOrder = Array(stored.suffix(500))
+        dismissedIDs = Set(dismissedOrder)
     }
 
     private func saveDismissed() {
-        UserDefaults.standard.set(Array(dismissedIDs.suffix(500)), forKey: "notifications.dismissed")
+        if dismissedOrder.count > 500 {
+            dismissedOrder = Array(dismissedOrder.suffix(500))
+            dismissedIDs = Set(dismissedOrder)
+        }
+        UserDefaults.standard.set(dismissedOrder, forKey: "notifications.dismissed")
     }
 
     func dismiss(_ id: String) {
-        dismissedIDs.insert(id)
+        if dismissedIDs.insert(id).inserted {
+            dismissedOrder.append(id)
+        }
         saveDismissed()
         items.removeAll { $0.id == id }
     }
 
     func dismissAll() {
-        for item in items { dismissedIDs.insert(item.id) }
+        for item in items where dismissedIDs.insert(item.id).inserted {
+            dismissedOrder.append(item.id)
+        }
         saveDismissed()
         items = []
     }
