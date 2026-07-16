@@ -45,6 +45,10 @@ final class AICodingModule: NotchModule, ObservableObject {
         watcher = nil
         sessions = []
         notifiedWaiting.removeAll()
+        // Drop the shared pointer so an in-flight detached scan that lands
+        // after deactivation can't repopulate sessions or post a stray
+        // waiting-approval notification for a module the user just disabled.
+        AICodingShared.instance = nil
     }
 
     /// Re-arms the FSEvents watcher with the current provider set; only

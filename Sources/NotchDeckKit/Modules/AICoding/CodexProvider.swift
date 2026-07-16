@@ -16,7 +16,7 @@ public struct CodexProvider: AISessionProvider {
         let cutoff = Date().addingTimeInterval(-6 * 3600)
         guard let walker = fm.enumerator(
             at: sessionsDir,
-            includingPropertiesForKeys: [.contentModificationDateKey, .isRegularFileKey]) else { return [] }
+            includingPropertiesForKeys: [.contentModificationDateKey]) else { return [] }
         var sessions: [AISession] = []
         for case let url as URL in walker {
             guard url.pathExtension == "jsonl",
