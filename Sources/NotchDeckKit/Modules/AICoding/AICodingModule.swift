@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 @MainActor
 final class AICodingModule: NotchModule, ObservableObject {
@@ -33,6 +34,9 @@ final class AICodingModule: NotchModule, ObservableObject {
         watcher.start()
         self.watcher = watcher
         AICodingShared.instance = self
+        if Bundle.main.bundleIdentifier != nil {
+            UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        }
         refresh()
     }
 
@@ -68,7 +72,23 @@ final class AICodingModule: NotchModule, ObservableObject {
 
     func focus(_ session: AISession) {}
 
-    private func notifyWaiting(_ found: [AISession]) {}
+    private func notifyWaiting(_ found: [AISession]) {
+        guard Bundle.main.bundleIdentifier != nil else { return }
+        let waitingNow = Set(found.filter { $0.status == .waitingApproval }.map(\.id))
+        // Clear ids that are no longer waiting so a future wait re-notifies.
+        notifiedWaiting.formIntersection(waitingNow)
+        for session in found where session.status == .waitingApproval
+            && !notifiedWaiting.contains(session.id) {
+            notifiedWaiting.insert(session.id)
+            let content = UNMutableNotificationContent()
+            let provider = session.provider == "codex" ? "Codex" : "Claude Code"
+            content.title = "\(provider) waiting for approval"
+            content.body = session.projectName
+            content.sound = .default
+            UNUserNotificationCenter.current().add(UNNotificationRequest(
+                identifier: "aicoding-\(session.id)", content: content, trigger: nil))
+        }
+    }
 
     func panelView() -> AnyView { AnyView(AICodingPanelView(module: self)) }
 
