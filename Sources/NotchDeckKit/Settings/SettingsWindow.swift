@@ -61,20 +61,40 @@ struct SettingsView: View {
             }
             Section("Modules") {
                 ForEach(registry.modules, id: \.id) { module in
-                    HStack {
-                        Toggle(isOn: Binding(
-                            get: { registry.enabledIDs.contains(module.id) },
-                            set: { registry.setEnabled(module.id, $0) }
-                        )) {
-                            Label(module.name, systemImage: module.icon)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Toggle(isOn: Binding(
+                                get: { registry.enabledIDs.contains(module.id) },
+                                set: { registry.setEnabled(module.id, $0) }
+                            )) {
+                                Label(module.name, systemImage: module.icon)
+                            }
+                            Spacer()
+                            Button { registry.moveModule(module.id, by: -1) } label: {
+                                Image(systemName: "chevron.up")
+                            }.buttonStyle(.borderless)
+                            Button { registry.moveModule(module.id, by: 1) } label: {
+                                Image(systemName: "chevron.down")
+                            }.buttonStyle(.borderless)
                         }
-                        Spacer()
-                        Button { registry.moveModule(module.id, by: -1) } label: {
-                            Image(systemName: "chevron.up")
-                        }.buttonStyle(.borderless)
-                        Button { registry.moveModule(module.id, by: 1) } label: {
-                            Image(systemName: "chevron.down")
-                        }.buttonStyle(.borderless)
+                        if module.id == AICodingModule.moduleID, registry.enabledIDs.contains(module.id) {
+                            Toggle("Claude Code", isOn: Binding(
+                                get: { settings.isAIProviderEnabled("claude-code") },
+                                set: { newValue in
+                                    settings.setAIProviderEnabled("claude-code", newValue)
+                                    AICodingShared.instance?.reloadProviders()
+                                }
+                            ))
+                            .padding(.leading, 20)
+                            Toggle("Codex", isOn: Binding(
+                                get: { settings.isAIProviderEnabled("codex") },
+                                set: { newValue in
+                                    settings.setAIProviderEnabled("codex", newValue)
+                                    AICodingShared.instance?.reloadProviders()
+                                }
+                            ))
+                            .padding(.leading, 20)
+                        }
                     }
                 }
                 Picker("Open by default", selection: Binding(

@@ -43,6 +43,14 @@ final class AICodingModule: NotchModule, ObservableObject {
         notifiedWaiting.removeAll()
     }
 
+    /// Re-arms the FSEvents watcher with the current provider set; only
+    /// acts when the module is currently active.
+    func reloadProviders() {
+        guard watcher != nil else { return }
+        deactivate()
+        activate()
+    }
+
     /// Re-scan providers off the main thread, publish sorted results on main.
     func refresh() {
         let providers = activeProviders
