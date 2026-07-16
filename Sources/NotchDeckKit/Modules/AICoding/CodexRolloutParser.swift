@@ -54,6 +54,17 @@ public enum CodexRolloutParser {
             case ("response_item", "function_call_output"):
                 if let callID = payload["call_id"] as? String { openCalls.remove(callID) }
             case ("response_item", "message"):
+                if let role = payload["role"] as? String, role == "assistant",
+                   let content = payload["content"] as? [[String: Any]] {
+                    if let lastItem = content.last,
+                       let itemType = lastItem["type"] as? String, itemType == "output_text",
+                       let text = lastItem["text"] as? String {
+                        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !trimmed.isEmpty {
+                            result.lastMessage = String(trimmed.prefix(140))
+                        }
+                    }
+                }
                 lastEventWasCompletion = false
             default:
                 break
