@@ -461,6 +461,14 @@ expect(EventSearch.matches(query: "stand", in: ["Standup", nil]), "case-insensit
 expect(EventSearch.matches(query: "CAFÉ", in: ["team cafe sync"]), "diacritic-insensitive")
 expect(!EventSearch.matches(query: "retro", in: ["Standup", "Room 4"]), "no match → false")
 
+// MARK: - TaskTrash
+
+let oldEntry = TrashedTask(id: "1", title: "old", deletedAt: Date(timeIntervalSinceNow: -31 * 86_400))
+let newEntry = TrashedTask(id: "2", title: "new", deletedAt: Date(timeIntervalSinceNow: -3_600))
+let kept = TaskTrash.pruned([oldEntry, newEntry], now: Date(), retentionDays: 30)
+expect(kept == [newEntry], "prune drops entries older than retention")
+expect(TaskTrash.pruned([], now: Date(), retentionDays: 30).isEmpty, "empty stays empty")
+
 // MARK: - Summary
 
 if failures == 0 {
