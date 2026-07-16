@@ -198,6 +198,13 @@ expect(ccp.id == "claude-code", "claude provider id")
 expect(ccp.watchRoots().first?.lastPathComponent == "projects", "claude watch root is ~/.claude/projects")
 _ = ccp.scan()   // must not crash on the live filesystem
 
+// MARK: - CodexProvider
+
+let cxp = CodexProvider()
+expect(cxp.id == "codex", "codex provider id")
+expect(cxp.watchRoots().first?.lastPathComponent == "sessions", "codex watch root is ~/.codex/sessions")
+_ = cxp.scan()   // must not crash on the live filesystem
+
 // MARK: - MeetingDetector
 
 expect(
