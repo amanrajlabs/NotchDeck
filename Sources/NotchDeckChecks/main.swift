@@ -205,6 +205,14 @@ expect(cxp.id == "codex", "codex provider id")
 expect(cxp.watchRoots().first?.lastPathComponent == "sessions", "codex watch root is ~/.codex/sessions")
 _ = cxp.scan()   // must not crash on the live filesystem
 
+// MARK: - AICodingMigration
+let migrated = AICodingMigration.migrate(
+    order: ["media", "claude", "calendar"], defaultModule: "claude")
+expect(migrated.order == ["media", "ai-coding", "calendar"], "claude id migrated in order")
+expect(migrated.defaultModule == "ai-coding", "claude default migrated")
+let untouched = AICodingMigration.migrate(order: ["media"], defaultModule: "media")
+expect(untouched.order == ["media"], "no claude id → order unchanged")
+
 // MARK: - MeetingDetector
 
 expect(

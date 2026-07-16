@@ -77,6 +77,22 @@ final class SettingsStore: ObservableObject {
     }
 
     init() {
+        // Migrate persisted module id "claude" → "ai-coding" before reading defaults
+        let orderKey = "module.order"
+        let order = defaults.stringArray(forKey: orderKey) ?? []
+        let currentDefault = defaults.string(forKey: "module.default")
+        let result = AICodingMigration.migrate(order: order, defaultModule: currentDefault)
+        if result.order != order { defaults.set(result.order, forKey: orderKey) }
+        if result.defaultModule != currentDefault {
+            defaults.set(result.defaultModule, forKey: "module.default")
+        }
+        // Per-module enabled flag is stored as "module.<id>.enabled"
+        let oldEnabledKey = "module.claude.enabled"
+        if defaults.object(forKey: oldEnabledKey) != nil {
+            let value = defaults.bool(forKey: oldEnabledKey)
+            defaults.set(value, forKey: "module.ai-coding.enabled")
+            defaults.removeObject(forKey: oldEnabledKey)
+        }
         hudSuppressSystemBezel = defaults.bool(forKey: "hudSuppressSystemBezel")
         showOnAllDisplays = defaults.bool(forKey: "showOnAllDisplays")
         showInScreenCapture = defaults.object(forKey: "showInScreenCapture") as? Bool ?? true
