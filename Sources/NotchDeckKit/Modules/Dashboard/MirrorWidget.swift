@@ -6,6 +6,9 @@ import SwiftUI
 final class MirrorController: ObservableObject {
     @Published var denied = false
     let session = AVCaptureSession()
+    /// Serializes start/stop so their execution order matches the order start()/stop()
+    /// were called — a fast onAppear→onDisappear must not leave the camera running.
+    private let sessionQueue = DispatchQueue(label: "com.notchdeck.mirror.session")
 
     func start() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -26,7 +29,7 @@ final class MirrorController: ObservableObject {
 
     func stop() {
         nonisolated(unsafe) let session = session
-        Task.detached { session.stopRunning() }
+        sessionQueue.async { session.stopRunning() }
     }
 
     private func configureAndRun() {
@@ -40,7 +43,7 @@ final class MirrorController: ObservableObject {
             session.commitConfiguration()
         }
         nonisolated(unsafe) let session = session
-        Task.detached { session.startRunning() }
+        sessionQueue.async { session.startRunning() }
     }
 }
 
