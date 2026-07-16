@@ -56,12 +56,14 @@ public struct UsageLedger: Sendable {
 @MainActor
 final class AppUsageTracker: ObservableObject {
     @Published private(set) var todaySlices: [UsageSlice] = []
+    @Published private(set) var todaySwitchCount = 0
 
     private var ledger = UsageLedger()
     private var currentBundle: String?
     private var sinceDate = Date()
     private var observers: [NSObjectProtocol] = []
     private var persistTask: Task<Void, Never>?
+    private var switchCounts: [String: Int] = [:] // dayKey → count
 
     private static var fileURL: URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -70,11 +72,18 @@ final class AppUsageTracker: ObservableObject {
         return dir.appendingPathComponent("screentime.json")
     }
 
+    private static var switchesURL: URL {
+        fileURL.deletingLastPathComponent().appendingPathComponent("screentime-switches.json")
+    }
+
     func activate() {
         if let data = try? Data(contentsOf: Self.fileURL),
            let decoded = try? JSONDecoder().decode([String: [String: TimeInterval]].self, from: data) {
             ledger = UsageLedger(days: decoded)
         }
+        switchCounts = (try? Data(contentsOf: Self.switchesURL))
+            .flatMap { try? JSONDecoder().decode([String: Int].self, from: $0) } ?? [:]
+        todaySwitchCount = switchCounts[UsageLedger.dayKey(for: Date())] ?? 0
         currentBundle = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
         sinceDate = Date()
 
@@ -84,7 +93,10 @@ final class AppUsageTracker: ObservableObject {
         ) { note in
             let bundle = (note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?
                 .bundleIdentifier
-            Task { @MainActor in AppUsageTrackerShared.instance?.transition(to: bundle) }
+            Task { @MainActor in
+                AppUsageTrackerShared.instance?.transition(to: bundle)
+                AppUsageTrackerShared.instance?.recordSwitch()
+            }
         })
         AppUsageTrackerShared.instance = self
         publish()
@@ -119,6 +131,22 @@ final class AppUsageTracker: ObservableObject {
 
     /// Called when the dashboard becomes visible, so the tile is current.
     func refresh() { publish() }
+
+    /// Ranked usage slices for today (no "in-progress" bias applied beyond `publish()`).
+    func topSlices(_ count: Int) -> [UsageSlice] { ledger.today(top: count) }
+
+    /// Counts one frontmost-app switch for today's tally and persists it.
+    /// Only invoked from the activation-notification handler — never from
+    /// `deactivate()`'s bookkeeping `transition(to: nil)` — so app-quit/module
+    /// teardown doesn't inflate the switch count.
+    private func recordSwitch() {
+        let key = UsageLedger.dayKey(for: Date())
+        switchCounts[key, default: 0] += 1
+        todaySwitchCount = switchCounts[key] ?? 0
+        if let data = try? JSONEncoder().encode(switchCounts) {
+            try? data.write(to: Self.switchesURL, options: .atomic)
+        }
+    }
 
     private func schedulePersist() {
         persistTask?.cancel()
@@ -210,5 +238,86 @@ struct ScreenTimeTile: View {
         let minutes = Int(seconds) / 60
         if minutes >= 60 { return "\(minutes / 60)h \(minutes % 60)m" }
         return "\(minutes)m"
+    }
+}
+
+// MARK: - Screen Time module (categories, ranked apps, switch count)
+
+@MainActor
+final class ScreenTimeModule: NotchModule, ObservableObject {
+    static let moduleID = "screentime"
+    let id = ScreenTimeModule.moduleID
+    let name = "Screen Time"
+    let icon = "hourglass"
+    let hasPanel = true
+    var preferredHeight: CGFloat { 200 }
+
+    let tracker: AppUsageTracker
+
+    init(tracker: AppUsageTracker) {
+        self.tracker = tracker
+    }
+
+    // Tracker lifecycle belongs to the dashboard module (shared instance).
+    func activate() {}
+    func deactivate() {}
+
+    func panelView() -> AnyView { AnyView(ScreenTimePanelView(tracker: tracker)) }
+
+    func headerBadge() -> AnyView? {
+        AnyView(HeaderPill(text: "\(tracker.todaySwitchCount) switches", icon: "arrow.triangle.swap"))
+    }
+}
+
+struct ScreenTimePanelView: View {
+    @ObservedObject var tracker: AppUsageTracker
+
+    var body: some View {
+        let slices = tracker.topSlices(8)
+        let total = max(slices.reduce(0) { $0 + $1.seconds }, 1)
+        let categories = AppCategory.totals(slices)
+        HStack(alignment: .top, spacing: 20) {
+            VStack(spacing: 8) {
+                UsageDonut(slices: slices, total: total, centerText: ScreenTimeTile.duration(total))
+                    .frame(width: 84, height: 84)
+                VStack(alignment: .leading, spacing: 3) {
+                    ForEach(Array(categories.prefix(4).enumerated()), id: \.offset) { _, entry in
+                        HStack(spacing: 5) {
+                            Text(entry.category).font(.system(size: 9))
+                            Spacer()
+                            Text(ScreenTimeTile.duration(entry.seconds))
+                                .font(.system(size: 9).monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .frame(width: 130)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                SectionCaption(text: "Ranked apps")
+                ForEach(Array(slices.prefix(6).enumerated()), id: \.offset) { index, slice in
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(ScreenTimeTile.palette[index % ScreenTimeTile.palette.count])
+                            .frame(width: 6, height: 6)
+                        Text(ScreenTimeTile.appName(slice.bundleID)).font(.system(size: 10)).lineLimit(1)
+                        Spacer()
+                        GeometryReader { geo in
+                            Capsule().fill(Color.white.opacity(0.15))
+                                .overlay(alignment: .leading) {
+                                    Capsule()
+                                        .fill(ScreenTimeTile.palette[index % ScreenTimeTile.palette.count])
+                                        .frame(width: geo.size.width * slice.seconds / total)
+                                }
+                        }
+                        .frame(width: 90, height: 5)
+                        Text(ScreenTimeTile.duration(slice.seconds))
+                            .font(.system(size: 9).monospacedDigit()).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .onAppear { tracker.refresh() }
     }
 }

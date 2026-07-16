@@ -484,6 +484,22 @@ let kept = TaskTrash.pruned([oldEntry, newEntry], now: Date(), retentionDays: 30
 expect(kept == [newEntry], "prune drops entries older than retention")
 expect(TaskTrash.pruned([], now: Date(), retentionDays: 30).isEmpty, "empty stays empty")
 
+// MARK: - AppCategory
+
+expect(AppCategory.categorize("com.apple.Safari") == "Browsing", "Safari → Browsing")
+expect(AppCategory.categorize("com.google.Chrome") == "Browsing", "Chrome → Browsing")
+expect(AppCategory.categorize("com.apple.dt.Xcode") == "Development", "Xcode → Development")
+expect(AppCategory.categorize("com.tinyspeck.slackmacgap") == "Communication", "Slack → Communication")
+expect(AppCategory.categorize("com.spotify.client") == "Media", "Spotify → Media")
+expect(AppCategory.categorize("com.unknown.thing") == "Other", "unknown → Other")
+let catTotals = AppCategory.totals([
+    UsageSlice(bundleID: "com.apple.Safari", seconds: 100),
+    UsageSlice(bundleID: "com.google.Chrome", seconds: 50),
+    UsageSlice(bundleID: "com.apple.dt.Xcode", seconds: 120),
+])
+expect(catTotals.first?.category == "Browsing" && catTotals.first?.seconds == 150,
+       "categories aggregate and sort: \(catTotals)")
+
 // MARK: - Summary
 
 if failures == 0 {

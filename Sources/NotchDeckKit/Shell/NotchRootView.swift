@@ -11,6 +11,7 @@ struct ModuleSet {
     let bluetooth: BluetoothModule
     let calendar: CalendarModule
     let system: SystemMonitorModule
+    let screenTime: ScreenTimeModule
     let pomodoro: PomodoroModule
     let dayProgress: DayProgressModule
     let tasks: TasksModule
@@ -28,6 +29,7 @@ struct ModuleSet {
         bluetooth = BluetoothModule()
         calendar = CalendarModule()
         system = SystemMonitorModule()
+        screenTime = ScreenTimeModule(tracker: dashboard.screenTime)
         pomodoro = PomodoroModule()
         dayProgress = DayProgressModule()
         tasks = TasksModule()
@@ -39,7 +41,7 @@ struct ModuleSet {
     }
 
     var all: [any NotchModule] {
-        [dashboard, media, calendar, tasks, notes, pomodoro, dayProgress, notifications, git, claude, translation, system, drop, bluetooth, hud]
+        [dashboard, media, calendar, tasks, notes, pomodoro, dayProgress, notifications, git, claude, translation, system, screenTime, drop, bluetooth, hud]
     }
 }
 
