@@ -17,7 +17,8 @@ final class BluetoothModule: NotchModule, ObservableObject {
 
     func activate() {
         refresh()
-        // A registry scan is cheap; once a minute keeps live data fresh.
+        // Scan spawns a subprocess (system_profiler); once a minute while the
+        // module is active keeps live data fresh without a tight cadence.
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
             MainActor.assumeIsolated { BluetoothModuleShared.instance?.refresh() }
         }
@@ -34,7 +35,14 @@ final class BluetoothModule: NotchModule, ObservableObject {
     }
 
     func refresh() {
-        let scanned = BTBatteryScanner.scan()
+        // scanAll spawns system_profiler (~1s) — keep it off the main thread.
+        Task.detached(priority: .utility) { [weak self] in
+            let scanned = BTBatteryScanner.scanAll()
+            await MainActor.run { self?.applyScan(scanned) }
+        }
+    }
+
+    private func applyScan(_ scanned: [BTDevice]) {
         if devices != scanned { devices = scanned }
         notifyLowBatteries(scanned)
     }

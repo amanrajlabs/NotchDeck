@@ -111,6 +111,38 @@ expect(
     "controller kind"
 )
 
+// system_profiler source (the reliable one — IORegistry is often empty)
+let spRoot: [String: Any] = [
+    "SPBluetoothDataType": [[
+        "device_connected": [
+            ["Magic Keyboard": [
+                "device_batteryLevelMain": "100%",
+                "device_minorType": "Keyboard",
+                "device_addr": "D2:EA:D2:E8:3E:F2",
+            ]],
+            ["Aman's AirPods Pro": [
+                "device_batteryLevelLeft": "100%",
+                "device_batteryLevelRight": "95%",
+                "device_batteryLevelCase": "82%",
+                "device_minorType": "Headphones",
+                "device_addr": "40:ED:CF:E9:DC:CA",
+            ]],
+            ["Magic Mouse": ["device_minorType": "Mouse"]],  // no battery → skipped
+        ],
+    ]],
+]
+let spDevices = BTBatteryScanner.parseSystemProfiler(root: spRoot)
+expect(spDevices.count == 2, "system_profiler: only battery-reporting devices (mouse skipped)")
+let spKeyboard = spDevices.first { $0.name == "Magic Keyboard" }
+expect(spKeyboard?.kind == .keyboard, "system_profiler keyboard kind")
+expect(spKeyboard?.batteries == [BatterySlot(label: "", percent: 100)], "system_profiler main battery → single slot")
+let spAirpods = spDevices.first { $0.name == "Aman's AirPods Pro" }
+expect(spAirpods?.kind == .airpods, "system_profiler airpods kind from name")
+expect(spAirpods?.batteries.count == 3, "system_profiler airpods L/R/Case slots")
+expect(BTBatteryScanner.parseSystemProfiler(root: [:]) == [], "system_profiler empty root → []")
+expect(BTBatteryScanner.percentValue("77%") == 77, "percentValue strips % sign")
+expect(BTBatteryScanner.percentValue("120%") == nil, "percentValue rejects out-of-range")
+
 // MARK: - MeetingDetector
 
 expect(

@@ -76,6 +76,91 @@ public enum BTBatteryScanner {
         return .other
     }
 
+    /// Kind inference from `system_profiler`'s device_minorType, falling back to the name.
+    public static func kind(minorType: String, name: String) -> BTDevice.Kind {
+        if name.lowercased().contains("airpods") { return .airpods }
+        switch minorType.lowercased() {
+        case "keyboard": return .keyboard
+        case "mouse": return .mouse
+        case "trackpad": return .trackpad
+        case "headphones", "headset": return .headphones
+        case "gamepad", "controller": return .controller
+        default: return inferKind(name: name, properties: [:])
+        }
+    }
+
+    /// Pure parse of `system_profiler -json SPBluetoothDataType` output. Tested.
+    /// Only connected devices reporting a battery level are returned.
+    public static func parseSystemProfiler(root: [String: Any]) -> [BTDevice] {
+        guard let sections = root["SPBluetoothDataType"] as? [[String: Any]] else { return [] }
+        var devices: [BTDevice] = []
+        var seen = Set<String>()
+        for section in sections {
+            guard let connected = section["device_connected"] as? [[String: Any]] else { continue }
+            for entry in connected {
+                for (name, value) in entry {
+                    guard let info = value as? [String: Any] else { continue }
+                    var slots: [BatterySlot] = []
+                    if let l = percentValue(info["device_batteryLevelLeft"]) {
+                        slots.append(BatterySlot(label: "L", percent: l))
+                    }
+                    if let r = percentValue(info["device_batteryLevelRight"]) {
+                        slots.append(BatterySlot(label: "R", percent: r))
+                    }
+                    if let box = percentValue(info["device_batteryLevelCase"]) {
+                        slots.append(BatterySlot(label: "Case", percent: box))
+                    }
+                    if slots.isEmpty, let main = percentValue(info["device_batteryLevelMain"]) {
+                        slots.append(BatterySlot(label: "", percent: main))
+                    }
+                    guard !slots.isEmpty else { continue }
+                    let address = (info["device_addr"] as? String) ?? name
+                    guard seen.insert(normalizedAddress(address)).inserted else { continue }
+                    devices.append(BTDevice(
+                        id: address,
+                        name: name,
+                        kind: kind(minorType: (info["device_minorType"] as? String) ?? "", name: name),
+                        batteries: slots
+                    ))
+                }
+            }
+        }
+        return devices
+    }
+
+    /// Runs `system_profiler` and parses connected Bluetooth device batteries.
+    /// This is the reliable source: many Macs never populate the IORegistry HID
+    /// battery keys, but the Bluetooth daemon reports them here.
+    static func scanSystemProfiler() -> [BTDevice] {
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/usr/sbin/system_profiler")
+        proc.arguments = ["-json", "SPBluetoothDataType"]
+        let pipe = Pipe()
+        proc.standardOutput = pipe
+        proc.standardError = FileHandle.nullDevice
+        do {
+            try proc.run()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            proc.waitUntilExit()
+            guard let root = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [] }
+            return parseSystemProfiler(root: root)
+        } catch {
+            return []
+        }
+    }
+
+    /// Union of the system_profiler source (authoritative) and the IORegistry
+    /// scan, deduped by normalized address. Off the main thread — spawns a
+    /// subprocess.
+    static func scanAll() -> [BTDevice] {
+        var result = scanSystemProfiler()
+        var seen = Set(result.map { normalizedAddress($0.id) })
+        for device in scan() where seen.insert(normalizedAddress(device.id)).inserted {
+            result.append(device)
+        }
+        return result.sorted { $0.name < $1.name }
+    }
+
     /// Walks the IORegistry for Bluetooth HID devices reporting battery levels.
     static func scan() -> [BTDevice] {
         var iterator: io_iterator_t = 0
@@ -107,5 +192,24 @@ public enum BTBatteryScanner {
         guard let number = any as? NSNumber else { return nil }
         let value = number.intValue
         return (0...100).contains(value) ? value : nil
+    }
+
+    /// Accepts NSNumber or "NN%"/"NN" strings (system_profiler reports strings).
+    public static func percentValue(_ any: Any?) -> Int? {
+        if let number = any as? NSNumber { return (0...100).contains(number.intValue) ? number.intValue : nil }
+        if let string = any as? String {
+            let trimmed = string.replacingOccurrences(of: "%", with: "")
+                .trimmingCharacters(in: .whitespaces)
+            if let value = Int(trimmed), (0...100).contains(value) { return value }
+        }
+        return nil
+    }
+
+    /// Lowercased, separator-free address for cross-source dedup (IORegistry and
+    /// system_profiler format addresses differently).
+    static func normalizedAddress(_ address: String) -> String {
+        address.lowercased()
+            .replacingOccurrences(of: ":", with: "")
+            .replacingOccurrences(of: "-", with: "")
     }
 }
