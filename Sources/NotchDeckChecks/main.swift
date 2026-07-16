@@ -191,6 +191,13 @@ let codexAssistantMsg = """
 let cam = CodexRolloutParser.parse(lines: codexAssistantMsg)
 expect(cam.lastMessage == "Ready to review the diff.", "codex extracts assistant response_item message")
 
+// MARK: - ClaudeCodeProvider
+
+let ccp = ClaudeCodeProvider()
+expect(ccp.id == "claude-code", "claude provider id")
+expect(ccp.watchRoots().first?.lastPathComponent == "projects", "claude watch root is ~/.claude/projects")
+_ = ccp.scan()   // must not crash on the live filesystem
+
 // MARK: - MeetingDetector
 
 expect(
