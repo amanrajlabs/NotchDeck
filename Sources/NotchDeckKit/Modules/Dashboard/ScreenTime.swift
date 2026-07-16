@@ -104,6 +104,7 @@ final class AppUsageTracker: ObservableObject {
         }
         switchCounts = (try? Data(contentsOf: Self.switchesURL))
             .flatMap { try? JSONDecoder().decode([String: Int].self, from: $0) } ?? [:]
+        switchCounts = Self.prunedSwitchCounts(switchCounts)
         todaySwitchCount = switchCounts[UsageLedger.dayKey(for: Date())] ?? 0
         currentBundle = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
         sinceDate = Date()
@@ -164,9 +165,17 @@ final class AppUsageTracker: ObservableObject {
         let key = UsageLedger.dayKey(for: Date())
         switchCounts[key, default: 0] += 1
         todaySwitchCount = switchCounts[key] ?? 0
+        switchCounts = Self.prunedSwitchCounts(switchCounts)
         if let data = try? JSONEncoder().encode(switchCounts) {
             try? data.write(to: Self.switchesURL, options: .atomic)
         }
+    }
+
+    /// Keeps only the most recent ~90 day-keys (dayKey sorts lexically = chronologically),
+    /// so screentime-switches.json doesn't grow unbounded across months of use.
+    private static func prunedSwitchCounts(_ counts: [String: Int]) -> [String: Int] {
+        let keep = Set(counts.keys.sorted().suffix(90))
+        return counts.filter { keep.contains($0.key) }
     }
 
     private func schedulePersist() {

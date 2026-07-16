@@ -33,17 +33,21 @@ final class MirrorController: ObservableObject {
     }
 
     private func configureAndRun() {
-        if session.inputs.isEmpty,
-           let camera = AVCaptureDevice.default(for: .video),
-           let input = try? AVCaptureDeviceInput(device: camera),
-           session.canAddInput(input) {
-            session.beginConfiguration()
-            session.sessionPreset = .low
-            session.addInput(input)
-            session.commitConfiguration()
-        }
+        // Device discovery/input creation can happen on the main actor; the
+        // actual session mutation must run on sessionQueue so it's serialized
+        // with stop()'s stopRunning() call on the same queue.
+        let camera = AVCaptureDevice.default(for: .video)
+        nonisolated(unsafe) let input = camera.flatMap { try? AVCaptureDeviceInput(device: $0) }
         nonisolated(unsafe) let session = session
-        sessionQueue.async { session.startRunning() }
+        sessionQueue.async {
+            if session.inputs.isEmpty, let input, session.canAddInput(input) {
+                session.beginConfiguration()
+                session.sessionPreset = .low
+                session.addInput(input)
+                session.commitConfiguration()
+            }
+            session.startRunning()
+        }
     }
 }
 

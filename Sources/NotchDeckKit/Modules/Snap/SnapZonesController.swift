@@ -52,6 +52,10 @@ final class SnapZonesController {
         let strip = SnapZoneMath.stripFrame(notch: notch, tileCount: layouts.count)
         if vm.snapZones == nil { vm.snapZones = layouts }
         vm.snapHighlight = SnapZoneMath.tileIndex(at: point, strip: strip, count: layouts.count)
+        if let activeVM, activeVM !== vm {
+            activeVM.snapZones = nil
+            activeVM.snapHighlight = nil
+        }
         activeVM = vm
         activeStrip = strip
         activeScreen = screen

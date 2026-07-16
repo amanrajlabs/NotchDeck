@@ -172,6 +172,7 @@ struct DashboardPanelView: View {
     @ObservedObject private var weather: WeatherService
     @ObservedObject private var toggles: QuickToggleEngine
     @ObservedObject private var tracker: AppUsageTracker
+    @AppStorage("dashboard.mirror") private var mirrorEnabled = false
 
     init(module: DashboardModule) {
         self.module = module
@@ -192,7 +193,7 @@ struct DashboardPanelView: View {
                 QuickTogglesWidget(toggles: toggles)
                 ScreenTimeWidget(tracker: tracker)
                 ClockWeatherWidget(weather: weather, source: module.calendarSource)
-                if UserDefaults.standard.bool(forKey: "dashboard.mirror") {
+                if mirrorEnabled {
                     MirrorWidget()
                 } else {
                     LauncherWidget(module: module, range: 5..<10, title: "Actions")

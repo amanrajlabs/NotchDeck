@@ -84,7 +84,7 @@ final class SettingsStore: ObservableObject {
         notchNudge = defaults.double(forKey: "notchNudge")
         snapZonesEnabled = defaults.bool(forKey: "snapZonesEnabled")
         if let data = defaults.data(forKey: "snapLayouts"),
-           let decoded = try? JSONDecoder().decode([SnapLayout].self, from: data), !decoded.isEmpty {
+           let decoded = try? JSONDecoder().decode([SnapLayout].self, from: data) {
             snapLayouts = decoded
         } else {
             snapLayouts = [.leftHalf, .maximize, .rightHalf, .leftThird, .rightThird]
