@@ -456,6 +456,19 @@ let previewStats = ClaudeSessionParser.parse(tail: previewTail)
 expect(previewStats.preview == "Fixed the bug in the parser.", "last assistant text wins as preview")
 expect(previewStats.assistantMessages == 2, "preview tail counts messages")
 
+// MARK: - Claude pending tool_use
+let claudePending = """
+{"type":"assistant","message":{"model":"claude-opus-4-8","content":[{"type":"tool_use","id":"tu_1","name":"Bash"}]}}
+"""
+expect(ClaudeSessionParser.parse(tail: claudePending).hasPendingToolUse == true,
+    "unmatched tool_use → pending")
+let claudeResolved = claudePending + """
+
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"tu_1"}]}}
+"""
+expect(ClaudeSessionParser.parse(tail: claudeResolved).hasPendingToolUse == false,
+    "matched tool_result → not pending")
+
 // MARK: - MonthGrid days
 
 let calendar = Calendar.current
