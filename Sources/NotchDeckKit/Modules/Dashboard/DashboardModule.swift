@@ -189,7 +189,11 @@ struct DashboardPanelView: View {
                 QuickTogglesWidget(toggles: toggles)
                 ScreenTimeWidget(tracker: tracker)
                 ClockWeatherWidget(weather: weather, source: module.calendarSource)
-                LauncherWidget(module: module, range: 5..<10, title: "Actions")
+                if UserDefaults.standard.bool(forKey: "dashboard.mirror") {
+                    MirrorWidget()
+                } else {
+                    LauncherWidget(module: module, range: 5..<10, title: "Actions")
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -198,7 +202,7 @@ struct DashboardPanelView: View {
 }
 
 /// Uniform widget cell.
-private struct WidgetCell<Content: View>: View {
+struct WidgetCell<Content: View>: View {
     var title: String?
     var titleIcon: String?
     @ViewBuilder var content: Content
@@ -549,6 +553,12 @@ struct DashboardSettingsView: View {
                     )
                 }
             }
+        }
+        Section("Dashboard widgets") {
+            Toggle("Mirror widget (camera) replaces Actions", isOn: Binding(
+                get: { UserDefaults.standard.bool(forKey: "dashboard.mirror") },
+                set: { UserDefaults.standard.set($0, forKey: "dashboard.mirror") }
+            ))
         }
     }
 }
