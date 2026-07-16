@@ -500,6 +500,21 @@ let catTotals = AppCategory.totals([
 expect(catTotals.first?.category == "Browsing" && catTotals.first?.seconds == 150,
        "categories aggregate and sort: \(catTotals)")
 
+// MARK: - QuoteBook + ProfileSchedule
+
+expect(!QuoteBook.quotes.isEmpty, "quotes bundled")
+expect(QuoteBook.quote(dayOfYear: 1) == QuoteBook.quote(dayOfYear: 1), "stable per day")
+expect(QuoteBook.quote(dayOfYear: 400) == QuoteBook.quotes[400 % QuoteBook.quotes.count], "wraps")
+
+let rules = [
+    ProfileRule(minuteOfDay: 9 * 60, profile: "Work"),
+    ProfileRule(minuteOfDay: 18 * 60, profile: "Default"),
+]
+expect(ProfileSchedule.active(atMinuteOfDay: 10 * 60, rules: rules) == "Work", "10:00 → Work")
+expect(ProfileSchedule.active(atMinuteOfDay: 20 * 60, rules: rules) == "Default", "20:00 → Default")
+expect(ProfileSchedule.active(atMinuteOfDay: 3 * 60, rules: rules) == "Default", "03:00 wraps to yesterday's last rule")
+expect(ProfileSchedule.active(atMinuteOfDay: 600, rules: []) == nil, "no rules → nil")
+
 // MARK: - Summary
 
 if failures == 0 {
