@@ -454,6 +454,13 @@ expect(LiveRotation.pick(count: 0, tick: 7) == nil, "no sources → nil")
 expect(LiveRotation.pick(count: 3, tick: 0) == 0, "tick 0 → first")
 expect(LiveRotation.pick(count: 3, tick: 4) == 1, "wraps modulo count")
 
+// MARK: - EventSearch
+
+expect(EventSearch.matches(query: "", in: ["Standup"]), "empty query matches")
+expect(EventSearch.matches(query: "stand", in: ["Standup", nil]), "case-insensitive prefix")
+expect(EventSearch.matches(query: "CAFÉ", in: ["team cafe sync"]), "diacritic-insensitive")
+expect(!EventSearch.matches(query: "retro", in: ["Standup", "Room 4"]), "no match → false")
+
 // MARK: - Summary
 
 if failures == 0 {

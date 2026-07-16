@@ -50,6 +50,7 @@ final class NotchShellController {
         modules.dashboard.pomodoro = modules.pomodoro
         modules.pomodoro.calendarSource = modules.calendar.source
         modules.pomodoro.tasks = modules.tasks
+        modules.calendar.tasks = modules.tasks
         registry.register(modules.all)
         rebuildPanels()
 
