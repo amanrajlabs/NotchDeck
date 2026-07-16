@@ -36,15 +36,13 @@ final class MediaModule: NotchModule {
 struct MediaLiveActivityView: View {
     @ObservedObject var controller: MediaController
     @State private var hovering = false
-    private var settings: (hover: Bool, viz: String) {
-        (UserDefaults.standard.object(forKey: "mediaHoverControls") as? Bool ?? true,
-         UserDefaults.standard.string(forKey: "mediaVisualization") ?? "bars")
-    }
+    @AppStorage("mediaHoverControls") private var mediaHoverControls = true
+    @AppStorage("mediaVisualization") private var mediaVisualization = "bars"
 
     var body: some View {
         HStack(spacing: 8) {
             ArtworkView(image: controller.artwork, size: 20)
-            if hovering && settings.hover {
+            if hovering && mediaHoverControls {
                 HStack(spacing: 7) {
                     Button { controller.previousTrack() } label: {
                         Image(systemName: "backward.fill").font(.system(size: 9))
@@ -58,7 +56,7 @@ struct MediaLiveActivityView: View {
                     }
                 }
                 .buttonStyle(.plain)
-            } else if settings.viz == "spectrum" {
+            } else if mediaVisualization == "spectrum" {
                 SpectrumBars(isPlaying: controller.track?.isPlaying == true)
                     .frame(width: 30, height: 14)
             } else {
