@@ -48,7 +48,10 @@ final class DashboardModule: NotchModule, ObservableObject {
     func activate() {
         weather.activate()
         toggles.activate()
-        screenTime.activate()
+        // Ref-counted: ScreenTimeModule may also hold this tracker alive
+        // independently, so use retain()/release() rather than
+        // activate()/deactivate() directly (see AppUsageTracker).
+        screenTime.retain()
         DashboardModuleShared.instance = self
         restartScheduleTimer()
     }
@@ -56,7 +59,7 @@ final class DashboardModule: NotchModule, ObservableObject {
     func deactivate() {
         weather.deactivate()
         toggles.deactivate()
-        screenTime.deactivate()
+        screenTime.release()
         scheduleTimer?.invalidate()
         scheduleTimer = nil
     }

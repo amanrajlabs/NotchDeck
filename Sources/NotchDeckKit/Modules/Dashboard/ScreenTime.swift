@@ -65,6 +65,12 @@ final class AppUsageTracker: ObservableObject {
     private var persistTask: Task<Void, Never>?
     private var switchCounts: [String: Int] = [:] // dayKey → count
 
+    /// Ref-counted lifecycle: DashboardModule and ScreenTimeModule both keep
+    /// this tracker alive independently (either can be enabled without the
+    /// other), so activation/teardown only happen on the 0→1 / 1→0 edge —
+    /// never double-registers the notification observer.
+    private var activationCount = 0
+
     private static var fileURL: URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("NotchDeck", isDirectory: true)
@@ -76,7 +82,22 @@ final class AppUsageTracker: ObservableObject {
         fileURL.deletingLastPathComponent().appendingPathComponent("screentime-switches.json")
     }
 
-    func activate() {
+    /// Retains the shared tracker; only performs real activation on 0→1.
+    func retain() {
+        activationCount += 1
+        guard activationCount == 1 else { return }
+        activate()
+    }
+
+    /// Releases the shared tracker; only performs real teardown on 1→0.
+    func release() {
+        guard activationCount > 0 else { return }
+        activationCount -= 1
+        guard activationCount == 0 else { return }
+        deactivate()
+    }
+
+    private func activate() {
         if let data = try? Data(contentsOf: Self.fileURL),
            let decoded = try? JSONDecoder().decode([String: [String: TimeInterval]].self, from: data) {
             ledger = UsageLedger(days: decoded)
@@ -102,7 +123,7 @@ final class AppUsageTracker: ObservableObject {
         publish()
     }
 
-    func deactivate() {
+    private func deactivate() {
         transition(to: nil)
         observers.forEach(NSWorkspace.shared.notificationCenter.removeObserver(_:))
         observers = []
@@ -258,9 +279,11 @@ final class ScreenTimeModule: NotchModule, ObservableObject {
         self.tracker = tracker
     }
 
-    // Tracker lifecycle belongs to the dashboard module (shared instance).
-    func activate() {}
-    func deactivate() {}
+    // Tracker is shared with DashboardModule; ref-counted retain/release lets
+    // either module keep it alive independently without double-registering
+    // the frontmost-app observer (see AppUsageTracker.retain/release).
+    func activate() { tracker.retain() }
+    func deactivate() { tracker.release() }
 
     func panelView() -> AnyView { AnyView(ScreenTimePanelView(tracker: tracker)) }
 

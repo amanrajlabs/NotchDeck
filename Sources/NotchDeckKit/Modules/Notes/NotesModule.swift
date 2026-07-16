@@ -14,6 +14,11 @@ final class NotesModule: NotchModule, ObservableObject {
     @Published var text: String = "" {
         didSet { if !isLoading { scheduleSave() } }
     }
+    /// Cached first-line titles, keyed by path, populated once per file in
+    /// `reloadList()` — the render path (sidebar, header badge) must never
+    /// hit disk, since `text` is `@Published` and re-renders on every
+    /// keystroke.
+    @Published private(set) var titles: [String: String] = [:]
 
     private var isLoading = false
     private var saveTask: Task<Void, Never>?
@@ -40,7 +45,7 @@ final class NotesModule: NotchModule, ObservableObject {
 
     func headerBadge() -> AnyView? {
         let words = text.split(whereSeparator: \.isWhitespace).count
-        let noteTitle = selected.map { self.title(of: $0) } ?? "Notes"
+        let noteTitle = selected.map { self.displayTitle(for: $0) } ?? "Notes"
         return AnyView(
             Text("\(noteTitle) · \(words) words")
                 .font(.system(size: 10))
@@ -74,6 +79,13 @@ final class NotesModule: NotchModule, ObservableObject {
             let b = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
             return a > b
         }
+        // Read each file's title once here, when the list changes — not on
+        // every render (see `displayTitle(for:)`).
+        var updated: [String: String] = [:]
+        for url in notes {
+            updated[url.path] = title(of: url)
+        }
+        titles = updated
     }
 
     func createNote() {
@@ -100,9 +112,29 @@ final class NotesModule: NotchModule, ObservableObject {
         load(url)
     }
 
+    /// Reads `url` from disk to derive its title. Used by `reloadList()` to
+    /// populate the cache and by `saveNow()` to refresh it; NOT for the
+    /// render path (use `displayTitle(for:)` there — it never touches disk).
     func title(of url: URL) -> String {
-        let head = (try? String(contentsOf: url, encoding: .utf8))?
-            .split(separator: "\n").first.map(String.init)
+        let content = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+        return Self.deriveTitle(content: content, url: url)
+    }
+
+    /// Title for the render path (sidebar rows, header badge): reads the
+    /// cache populated by `reloadList()`, except for the currently selected
+    /// note, whose title is derived live from the in-memory `text` so it
+    /// updates as the user types without a disk read.
+    func displayTitle(for url: URL) -> String {
+        if url == selected {
+            return Self.deriveTitle(content: text, url: url)
+        }
+        return titles[url.path] ?? url.deletingPathExtension().lastPathComponent
+    }
+
+    /// First non-empty line of `content`, else the filename — the shared
+    /// title rule.
+    private static func deriveTitle(content: String, url: URL) -> String {
+        let head = content.split(separator: "\n").first.map(String.init)
         return (head?.isEmpty == false ? head! : url.deletingPathExtension().lastPathComponent)
     }
 
@@ -124,6 +156,7 @@ final class NotesModule: NotchModule, ObservableObject {
     private func saveNow() {
         guard let selected else { return }
         try? text.write(to: selected, atomically: true, encoding: .utf8)
+        titles[selected.path] = Self.deriveTitle(content: text, url: selected)
     }
 }
 
@@ -168,7 +201,7 @@ struct NotesPanelView: View {
             }
             .buttonStyle(.plain)
             ForEach(module.notes, id: \.self) { url in
-                Text(module.title(of: url))
+                Text(module.displayTitle(for: url))
                     .font(.system(size: 10, weight: url == module.selected ? .bold : .regular))
                     .lineLimit(1)
                     .onTapGesture { module.select(url) }

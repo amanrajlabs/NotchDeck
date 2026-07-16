@@ -244,7 +244,13 @@ final class NotchShellController {
                 panel.setFrame(frame, display: true)
             }
         screenPanels.append(entry)
-        panel.orderFrontRegardless()
+        // A rebuild (display reconfig, or toggling Nudge / screen-capture /
+        // all-displays while snoozed) must not defeat an active snooze — leave
+        // the panel hidden and let the pending `snoozeTask` re-show it on
+        // schedule via `wake()`.
+        if !isSnoozed {
+            panel.orderFrontRegardless()
+        }
     }
 
     private static func stripFrame(notch: CGRect) -> CGRect {
