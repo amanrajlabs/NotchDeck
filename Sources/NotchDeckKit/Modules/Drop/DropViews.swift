@@ -9,12 +9,14 @@ final class DropModule: NotchModule, ObservableObject {
     let name = "Shelf"
     let icon = "tray.and.arrow.down.fill"
     let hasPanel = true
-    var preferredHeight: CGFloat { 150 }
+    var preferredHeight: CGFloat { 210 }
     /// Copy vs move mode for the folder action.
     @Published var moveMode = false
 
     @Published var pendingFiles: [URL] = []
     @Published var statusMessage: String?
+    /// Whether the second row of the drop grid is revealed. Transient — reset on deactivate/clear.
+    @Published var gridExpanded = false
     private var statusTask: Task<Void, Never>?
 
     func activate() {
@@ -24,6 +26,7 @@ final class DropModule: NotchModule, ObservableObject {
     func deactivate() {
         pendingFiles = []
         statusMessage = nil
+        gridExpanded = false
     }
 
     func panelView() -> AnyView { AnyView(ShelfView(module: self)) }
@@ -60,6 +63,40 @@ final class DropModule: NotchModule, ObservableObject {
             return
         }
         switch action {
+        case .shelf:
+            pendingFiles.append(contentsOf: urls)
+            showStatus("Added to shelf")
+        case .unzip:
+            runOffMain("Unzipping…") {
+                for url in urls { _ = try DropActionRunner.unzip(url) }
+                return "Unzipped"
+            }
+        case .music:
+            let music = URL(fileURLWithPath: "/System/Applications/Music.app")
+            NSWorkspace.shared.open(urls, withApplicationAt: music,
+                                    configuration: NSWorkspace.OpenConfiguration())
+            clearPending()
+        case .trashOrEject:
+            let volumes = urls.compactMap { DropActionRunner.volumeRoot(for: $0) }
+            if !volumes.isEmpty {
+                for volume in Set(volumes) {
+                    try? NSWorkspace.shared.unmountAndEjectDevice(at: volume)
+                }
+                showStatus("Ejected")
+                clearPending()
+            } else {
+                runOffMain("Trashing…") {
+                    try DropActionRunner.trash(urls)
+                    return "Moved to Trash"
+                }
+            }
+        case .icloud:
+            runOffMain("Saving to iCloud…") {
+                try DropActionRunner.saveToICloud(urls)
+                return "Saved to iCloud Drive"
+            }
+        case .expand:
+            gridExpanded.toggle()
         case .airdrop:
             if let service = NSSharingService(named: .sendViaAirDrop), service.canPerform(withItems: urls) {
                 service.perform(withItems: urls)
@@ -119,7 +156,20 @@ final class DropModule: NotchModule, ObservableObject {
         }
     }
 
-    func clearPending() { pendingFiles = [] }
+    func clearPending() {
+        pendingFiles = []
+        gridExpanded = false
+    }
+
+    /// Entry point for a drop landing directly on a grid tile (each tile is its own drop target).
+    func handleGridDrop(_ action: DropGridAction, providers: [NSItemProvider]) {
+        let box = ProviderBox(providers: providers)
+        Task { [weak self] in
+            let urls = await FileDropLoader.urls(from: box)
+            guard let self, !urls.isEmpty else { return }
+            self.run(action, on: urls)
+        }
+    }
 
     private func showStatus(_ message: String) {
         statusMessage = message
@@ -214,34 +264,55 @@ enum FileDropLoader {
 // MARK: - Views
 
 enum DropGridAction: Hashable {
+    case shelf
     case airdrop
     case zip
+    case unzip
     case convert(ImageFormat)
     case move
     case copy
     case openWith
+    case music
+    case trashOrEject
+    case icloud
+    case expand
 
     var title: String {
         switch self {
+        case .shelf: "Shelf"
         case .airdrop: "AirDrop"
         case .zip: "Zip"
+        case .unzip: "Unzip"
         case .convert(let f): f.rawValue.uppercased()
         case .move: "Move…"
         case .copy: "Copy…"
         case .openWith: "Open With"
+        case .music: "Music"
+        case .trashOrEject: "Trash / Eject"
+        case .icloud: "iCloud"
+        case .expand: "Expand"
         }
     }
 
     var icon: String {
         switch self {
+        case .shelf: "tray.and.arrow.down.fill"
         case .airdrop: "wifi"
         case .zip: "doc.zipper"
+        case .unzip: "shippingbox.and.arrow.backward"
         case .convert: "photo.on.rectangle.angled"
         case .move: "folder"
         case .copy: "doc.on.doc"
         case .openWith: "arrow.up.forward.app"
+        case .music: "music.note"
+        case .trashOrEject: "trash"
+        case .icloud: "icloud.and.arrow.up"
+        case .expand: "chevron.down.circle"
         }
     }
+
+    static let firstRow: [DropGridAction] = [.shelf, .airdrop, .zip, .convert(.png), .expand]
+    static let secondRow: [DropGridAction] = [.unzip, .move, .copy, .openWith, .music, .trashOrEject, .icloud]
 }
 
 struct ShelfHeaderActions: View {
@@ -276,11 +347,64 @@ struct ShelfHeaderActions: View {
     }
 }
 
+/// Tile grid shown while a drag hovers; each tile is its own drop target.
+struct DropGridView: View {
+    @ObservedObject var module: DropModule
+
+    var body: some View {
+        VStack(spacing: 8) {
+            row(DropGridAction.firstRow)
+            if module.gridExpanded {
+                row(DropGridAction.secondRow)
+            }
+        }
+    }
+
+    private func row(_ actions: [DropGridAction]) -> some View {
+        HStack(spacing: 8) {
+            ForEach(actions, id: \.self) { action in
+                DropTile(action: action, module: module)
+            }
+        }
+    }
+}
+
+struct DropTile: View {
+    let action: DropGridAction
+    @ObservedObject var module: DropModule
+    @State private var targeted = false
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: action.icon).font(.system(size: 15))
+            Text(action.title).font(.system(size: 8))
+        }
+        .frame(width: 74, height: 50)
+        .background(
+            RoundedRectangle(cornerRadius: 9)
+                .fill(targeted ? Theme.accent.opacity(0.5) : Theme.card)
+        )
+        .onDrop(of: [UTType.fileURL], isTargeted: Binding(
+            get: { targeted },
+            set: { hovering in
+                targeted = hovering
+                // Hovering the Expand tile reveals the second row without dropping.
+                if hovering, action == .expand { module.gridExpanded = true }
+            }
+        )) { providers in
+            guard action != .expand else { return false }
+            module.handleGridDrop(action, providers: providers)
+            return true
+        }
+    }
+}
+
 struct ShelfView: View {
     @ObservedObject var module: DropModule
 
     var body: some View {
         VStack(spacing: 6) {
+            DropGridView(module: module)
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(
                     Color.white.opacity(0.25),
@@ -293,7 +417,7 @@ struct ShelfView: View {
                             Image(systemName: "tray.and.arrow.down")
                                 .font(.system(size: 22))
                                 .foregroundStyle(.tertiary)
-                            Text("Drop files here — then AirDrop, zip, convert, or file them")
+                            Text("Drop onto an action tile — or onto Shelf to stash")
                                 .font(.system(size: 10))
                                 .foregroundStyle(.tertiary)
                         }
