@@ -102,4 +102,7 @@ final class SettingsStore: ObservableObject {
     func setModuleEnabled(_ id: String, _ enabled: Bool) {
         defaults.set(enabled, forKey: "module.\(id).enabled")
     }
+
+    /// Stub for Task 7; Task 9 replaces this with a real per-provider toggle.
+    func isAIProviderEnabled(_ id: String) -> Bool { true }
 }
