@@ -66,6 +66,7 @@ struct ShortcutRecorderField: View {
                 recording ? stop() : start()
             }
         }
+        .onDisappear { stop() }
     }
 
     private func start() {
