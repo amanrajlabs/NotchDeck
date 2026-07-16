@@ -61,12 +61,28 @@ struct SettingsView: View {
             }
             Section("Modules") {
                 ForEach(registry.modules, id: \.id) { module in
-                    Toggle(isOn: Binding(
-                        get: { registry.enabledIDs.contains(module.id) },
-                        set: { registry.setEnabled(module.id, $0) }
-                    )) {
-                        Label(module.name, systemImage: module.icon)
+                    HStack {
+                        Toggle(isOn: Binding(
+                            get: { registry.enabledIDs.contains(module.id) },
+                            set: { registry.setEnabled(module.id, $0) }
+                        )) {
+                            Label(module.name, systemImage: module.icon)
+                        }
+                        Spacer()
+                        Button { registry.moveModule(module.id, by: -1) } label: {
+                            Image(systemName: "chevron.up")
+                        }.buttonStyle(.borderless)
+                        Button { registry.moveModule(module.id, by: 1) } label: {
+                            Image(systemName: "chevron.down")
+                        }.buttonStyle(.borderless)
                     }
+                }
+                Picker("Open by default", selection: Binding(
+                    get: { settings.defaultModuleID ?? "" },
+                    set: { settings.defaultModuleID = $0.isEmpty ? nil : $0 }
+                )) {
+                    Text("First module").tag("")
+                    ForEach(registry.panelModules, id: \.id) { Text($0.name).tag($0.id) }
                 }
             }
             Section("Snap Zones") {

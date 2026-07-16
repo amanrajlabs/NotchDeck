@@ -149,6 +149,7 @@ final class NotchShellController {
     private func addPanel(for screen: NSScreen, modules: ModuleSet) {
         let notchRect = Self.notchRect(for: screen)
         let vm = NotchViewModel(notchSize: notchRect.size)
+        vm.selectedModuleID = settings.defaultModuleID
 
         let panel = NotchPanel(frame: Self.stripFrame(notch: notchRect))
         panel.sharingType = settings.showInScreenCapture ? .readOnly : .none

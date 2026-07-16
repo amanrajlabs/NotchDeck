@@ -70,6 +70,12 @@ final class SettingsStore: ObservableObject {
         didSet { defaults.set(mediaVisualization, forKey: "mediaVisualization") }
     }
 
+    /// Module shown when a fresh panel expands; nil falls back to the first
+    /// enabled panel module.
+    @Published var defaultModuleID: String? {
+        didSet { defaults.set(defaultModuleID, forKey: "module.default") }
+    }
+
     init() {
         hudSuppressSystemBezel = defaults.bool(forKey: "hudSuppressSystemBezel")
         showOnAllDisplays = defaults.bool(forKey: "showOnAllDisplays")
@@ -85,6 +91,7 @@ final class SettingsStore: ObservableObject {
         }
         mediaHoverControls = defaults.object(forKey: "mediaHoverControls") as? Bool ?? true
         mediaVisualization = defaults.string(forKey: "mediaVisualization") ?? "bars"
+        defaultModuleID = defaults.string(forKey: "module.default")
     }
 
     func isModuleEnabled(_ id: String) -> Bool {

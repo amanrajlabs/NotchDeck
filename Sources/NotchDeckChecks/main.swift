@@ -515,6 +515,13 @@ expect(ProfileSchedule.active(atMinuteOfDay: 20 * 60, rules: rules) == "Default"
 expect(ProfileSchedule.active(atMinuteOfDay: 3 * 60, rules: rules) == "Default", "03:00 wraps to yesterday's last rule")
 expect(ProfileSchedule.active(atMinuteOfDay: 600, rules: []) == nil, "no rules → nil")
 
+// MARK: - ModuleOrder
+
+expect(ModuleOrder.apply(order: ["b", "a"], to: ["a", "b", "c"]) == ["b", "a", "c"],
+       "saved order wins; unknown ids append")
+expect(ModuleOrder.apply(order: [], to: ["a", "b"]) == ["a", "b"], "no saved order → unchanged")
+expect(ModuleOrder.apply(order: ["x"], to: ["a"]) == ["a"], "stale ids ignored")
+
 // MARK: - Summary
 
 if failures == 0 {
