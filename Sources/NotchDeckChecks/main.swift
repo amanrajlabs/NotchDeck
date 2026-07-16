@@ -186,7 +186,7 @@ expect(cd.finished == true, "codex task_complete → finished")
 
 let codexAssistantMsg = """
 {"type":"turn_context","payload":{"model":"gpt-5.5"}}
-{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Ready to review the diff."}]}}
+{"type":"response_item","payload":{"type":"message","role":"assistant","content":[{"type":"output_text","text":"Ready to review the diff."},{"type":"refusal","text":"n/a"}]}}
 """
 let cam = CodexRolloutParser.parse(lines: codexAssistantMsg)
 expect(cam.lastMessage == "Ready to review the diff.", "codex extracts assistant response_item message")
