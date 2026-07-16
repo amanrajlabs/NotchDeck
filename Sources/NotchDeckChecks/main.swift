@@ -158,6 +158,32 @@ expect(AIStatusRule.status(hasPendingCall: false, finished: false,
     lastActivity: ref.addingTimeInterval(-500), now: ref) == .idle,
     "no activity, stale → idle")
 
+// MARK: - CodexRolloutParser
+let codexWaiting = """
+{"type":"session_meta","payload":{"cwd":"/Users/aman/Desktop/Proj"}}
+{"type":"turn_context","payload":{"model":"gpt-5.5","cwd":"/Users/aman/Desktop/Proj"}}
+{"type":"event_msg","payload":{"type":"agent_message","message":"Running the build now."}}
+{"type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"total_tokens":24030}}}}
+{"type":"response_item","payload":{"type":"function_call","name":"exec_command","call_id":"call_A","arguments":"{}"}}
+"""
+let cw = CodexRolloutParser.parse(lines: codexWaiting)
+expect(cw.model == "gpt-5.5", "codex model from turn_context")
+expect(cw.cwd == "/Users/aman/Desktop/Proj", "codex cwd")
+expect(cw.tokens == 24030, "codex total tokens")
+expect(cw.lastMessage == "Running the build now.", "codex last agent message")
+expect(cw.hasPendingCall == true, "codex unmatched function_call → pending")
+expect(cw.finished == false, "codex not finished")
+expect(CodexRolloutParser.projectName(fromCwd: "/Users/aman/Desktop/Proj") == "Proj", "codex project name")
+
+let codexDone = codexWaiting + """
+
+{"type":"response_item","payload":{"type":"function_call_output","call_id":"call_A","output":"ok"}}
+{"type":"event_msg","payload":{"type":"task_complete","last_agent_message":"Done."}}
+"""
+let cd = CodexRolloutParser.parse(lines: codexDone)
+expect(cd.hasPendingCall == false, "codex matched call → not pending")
+expect(cd.finished == true, "codex task_complete → finished")
+
 // MARK: - MeetingDetector
 
 expect(
