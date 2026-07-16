@@ -100,6 +100,51 @@ public enum DropActionRunner {
         }
     }
 
+    /// Extracts an archive into a unique sibling folder; returns the folder.
+    public static func unzip(_ url: URL) throws -> URL {
+        let parent = url.deletingLastPathComponent()
+        let base = url.deletingPathExtension().lastPathComponent
+        var destDir = parent.appendingPathComponent(base, isDirectory: true)
+        var counter = 2
+        while FileManager.default.fileExists(atPath: destDir.path) {
+            destDir = parent.appendingPathComponent("\(base) \(counter)", isDirectory: true)
+            counter += 1
+        }
+        try FileManager.default.createDirectory(at: destDir, withIntermediateDirectories: true)
+        let ditto = Process()
+        ditto.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
+        ditto.arguments = ["-x", "-k", url.path, destDir.path]
+        try ditto.run()
+        ditto.waitUntilExit()
+        guard ditto.terminationStatus == 0 else { throw DropActionError.processFailed("ditto") }
+        return destDir
+    }
+
+    public static func trash(_ urls: [URL]) throws {
+        for url in urls {
+            try FileManager.default.trashItem(at: url, resultingItemURL: nil)
+        }
+    }
+
+    /// `/Volumes/Name/…` → `/Volumes/Name`. Anything else is not ejectable.
+    public static func volumeRoot(for url: URL) -> URL? {
+        let parts = url.pathComponents
+        guard parts.count >= 3, parts[0] == "/", parts[1] == "Volumes" else { return nil }
+        return URL(fileURLWithPath: "/Volumes/\(parts[2])")
+    }
+
+    public static func iCloudDriveURL(home: URL = FileManager.default.homeDirectoryForCurrentUser) -> URL {
+        home.appendingPathComponent("Library/Mobile Documents/com~apple~CloudDocs")
+    }
+
+    public static func saveToICloud(_ urls: [URL]) throws {
+        let drive = iCloudDriveURL()
+        guard FileManager.default.fileExists(atPath: drive.path) else {
+            throw DropActionError.processFailed("iCloud Drive")
+        }
+        try copy(urls, to: drive)
+    }
+
     // MARK: Naming
 
     public static func uniqueURL(in directory: URL, base: String, ext: String) -> URL {

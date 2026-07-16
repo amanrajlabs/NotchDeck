@@ -416,6 +416,38 @@ expect(combo.display == "⇧⌘N", "display renders modifiers+key: \(combo.displ
 let roundTrip = try? JSONDecoder().decode(KeyCombo.self, from: JSONEncoder().encode(combo))
 expect(roundTrip == combo, "KeyCombo codable round-trip")
 
+// MARK: - DropActionRunner (phase 5 actions)
+
+expect(
+    DropActionRunner.volumeRoot(for: URL(fileURLWithPath: "/Volumes/USB Stick/photos/a.jpg"))
+        == URL(fileURLWithPath: "/Volumes/USB Stick"),
+    "volume root extracted"
+)
+expect(DropActionRunner.volumeRoot(for: URL(fileURLWithPath: "/Users/x/a.txt")) == nil,
+       "non-volume path → nil")
+expect(DropActionRunner.volumeRoot(for: URL(fileURLWithPath: "/Volumes")) == nil,
+       "bare /Volumes → nil")
+expect(
+    DropActionRunner.iCloudDriveURL(home: URL(fileURLWithPath: "/Users/x")).path
+        == "/Users/x/Library/Mobile Documents/com~apple~CloudDocs",
+    "iCloud Drive path"
+)
+
+// unzip round-trip: zip a temp file, unzip it, expect the payload back.
+let tempDir = FileManager.default.temporaryDirectory
+    .appendingPathComponent("ndchecks-\(UUID().uuidString)")
+try! FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+let payload = tempDir.appendingPathComponent("hello.txt")
+try! "hello".write(to: payload, atomically: true, encoding: .utf8)
+if let archive = try? DropActionRunner.zip([payload]),
+   let extracted = try? DropActionRunner.unzip(archive) {
+    let inside = extracted.appendingPathComponent("hello.txt")
+    expect((try? String(contentsOf: inside, encoding: .utf8)) == "hello", "unzip restores payload")
+} else {
+    expect(false, "zip/unzip round-trip threw")
+}
+try? FileManager.default.removeItem(at: tempDir)
+
 // MARK: - Summary
 
 if failures == 0 {
