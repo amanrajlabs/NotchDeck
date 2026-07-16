@@ -117,13 +117,46 @@ final class NotificationsModule: NotchModule, ObservableObject {
     @Published private(set) var needsAccess = false
     @Published private(set) var unsupported = false
     private var timer: Timer?
+    private var dismissedOrder: [String] = []   // dismissal order, oldest→newest
+    private var dismissedIDs: Set<String> = []  // O(1) membership for the refresh filter
 
     func activate() {
+        loadDismissed()
         refresh()
         timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
             MainActor.assumeIsolated { NotificationsModuleShared.instance?.refresh() }
         }
         NotificationsModuleShared.instance = self
+    }
+
+    private func loadDismissed() {
+        let stored = UserDefaults.standard.stringArray(forKey: "notifications.dismissed") ?? []
+        dismissedOrder = Array(stored.suffix(500))
+        dismissedIDs = Set(dismissedOrder)
+    }
+
+    private func saveDismissed() {
+        if dismissedOrder.count > 500 {
+            dismissedOrder = Array(dismissedOrder.suffix(500))
+            dismissedIDs = Set(dismissedOrder)
+        }
+        UserDefaults.standard.set(dismissedOrder, forKey: "notifications.dismissed")
+    }
+
+    func dismiss(_ id: String) {
+        if dismissedIDs.insert(id).inserted {
+            dismissedOrder.append(id)
+        }
+        saveDismissed()
+        items.removeAll { $0.id == id }
+    }
+
+    func dismissAll() {
+        for item in items where dismissedIDs.insert(item.id).inserted {
+            dismissedOrder.append(item.id)
+        }
+        saveDismissed()
+        items = []
     }
 
     func deactivate() {
@@ -142,6 +175,14 @@ final class NotificationsModule: NotchModule, ObservableObject {
         )
     }
 
+    func headerActions() -> AnyView? {
+        AnyView(
+            HeaderPill(text: "Clear all", icon: "xmark") { [weak self] in
+                self?.dismissAll()
+            }
+        )
+    }
+
     func refresh() {
         // The query runs in ~ms, but keep it off the main actor anyway.
         Task.detached(priority: .utility) {
@@ -152,6 +193,7 @@ final class NotificationsModule: NotchModule, ObservableObject {
                 case .ok(let items):
                     if self.needsAccess { self.needsAccess = false }
                     if self.unsupported { self.unsupported = false }
+                    let items = items.filter { !self.dismissedIDs.contains($0.id) }
                     if self.items != items { self.items = items }
                 case .needsFullDiskAccess:
                     if !self.needsAccess { self.needsAccess = true }
@@ -166,6 +208,30 @@ final class NotificationsModule: NotchModule, ObservableObject {
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: item.appBundleID)
         else { return }
         NSWorkspace.shared.openApplication(at: url, configuration: NSWorkspace.OpenConfiguration())
+    }
+
+    /// Pill for the collapsed strip's rotating trailing slot: app name +
+    /// count of items delivered in the last 15 minutes. Nil when none.
+    func glanceView() -> AnyView? {
+        let recent = items.filter { $0.date.timeIntervalSinceNow > -900 }
+        guard let newest = recent.first else { return nil }
+        let appName = NSWorkspace.shared
+            .urlForApplication(withBundleIdentifier: newest.appBundleID)
+            .map { FileManager.default.displayName(atPath: $0.path) }
+            ?? newest.appBundleID.components(separatedBy: ".").last?.capitalized
+            ?? "New"
+        return AnyView(
+            HStack(spacing: 6) {
+                Image(systemName: "bell.badge.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(Theme.accent)
+                Text(recent.count == 1 ? appName : "\(recent.count) new")
+                    .font(.system(size: 10, weight: .semibold))
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        )
     }
 }
 
@@ -213,7 +279,11 @@ struct NotificationsPanelView: View {
                 ScrollView {
                     VStack(spacing: 7) {
                         ForEach(module.items) { item in
-                            NotificationRow(item: item) { module.open(item) }
+                            NotificationRow(
+                                item: item,
+                                openAction: { module.open(item) },
+                                dismissAction: { module.dismiss(item.id) }
+                            )
                         }
                     }
                 }
@@ -226,31 +296,44 @@ struct NotificationsPanelView: View {
 struct NotificationRow: View {
     let item: NotificationItem
     let openAction: () -> Void
+    let dismissAction: () -> Void
+    @State private var hovering = false
 
     var body: some View {
-        Button(action: openAction) {
-            HStack(alignment: .top, spacing: 8) {
-                appIcon
-                VStack(alignment: .leading, spacing: 1) {
-                    HStack {
-                        Text(item.title).font(.system(size: 12, weight: .semibold)).lineLimit(1)
-                        Spacer()
-                        Text(item.date, style: .relative)
-                            .font(.system(size: 9)).foregroundStyle(.tertiary)
+        HStack(alignment: .top, spacing: 8) {
+            Button(action: openAction) {
+                HStack(alignment: .top, spacing: 8) {
+                    appIcon
+                    VStack(alignment: .leading, spacing: 1) {
+                        HStack {
+                            Text(item.title).font(.system(size: 12, weight: .semibold)).lineLimit(1)
+                            Spacer()
+                            Text(item.date, style: .relative)
+                                .font(.system(size: 9)).foregroundStyle(.tertiary)
+                        }
+                        if !item.subtitle.isEmpty {
+                            Text(item.subtitle).font(.system(size: 11)).lineLimit(1)
+                        }
+                        Text(item.body)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
                     }
-                    if !item.subtitle.isEmpty {
-                        Text(item.subtitle).font(.system(size: 11)).lineLimit(1)
-                    }
-                    Text(item.body)
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
                 }
             }
-            .padding(6)
-            .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.06)))
+            .buttonStyle(.plain)
+            if hovering {
+                Button(action: dismissAction) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
         }
-        .buttonStyle(.plain)
+        .padding(6)
+        .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.06)))
+        .onHover { hovering = $0 }
     }
 
     private var appIcon: some View {

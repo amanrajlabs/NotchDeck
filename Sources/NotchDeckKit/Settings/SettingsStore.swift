@@ -19,6 +19,13 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    @Published var showInScreenCapture: Bool {
+        didSet {
+            defaults.set(showInScreenCapture, forKey: "showInScreenCapture")
+            onDisplayConfigChange?()
+        }
+    }
+
     @Published var launchAtLogin: Bool {
         didSet {
             guard oldValue != launchAtLogin else { return }
@@ -36,10 +43,55 @@ final class SettingsStore: ObservableObject {
         }
     }
 
+    @Published var notchNudge: Double {
+        didSet {
+            defaults.set(notchNudge, forKey: "notchNudge")
+            onDisplayConfigChange?()
+        }
+    }
+
+    @Published var snapZonesEnabled: Bool {
+        didSet { defaults.set(snapZonesEnabled, forKey: "snapZonesEnabled") }
+    }
+
+    @Published var snapLayouts: [SnapLayout] {
+        didSet {
+            if let data = try? JSONEncoder().encode(snapLayouts) {
+                defaults.set(data, forKey: "snapLayouts")
+            }
+        }
+    }
+
+    @Published var mediaHoverControls: Bool {
+        didSet { defaults.set(mediaHoverControls, forKey: "mediaHoverControls") }
+    }
+
+    @Published var mediaVisualization: String {
+        didSet { defaults.set(mediaVisualization, forKey: "mediaVisualization") }
+    }
+
+    /// Module shown when a fresh panel expands; nil falls back to the first
+    /// enabled panel module.
+    @Published var defaultModuleID: String? {
+        didSet { defaults.set(defaultModuleID, forKey: "module.default") }
+    }
+
     init() {
         hudSuppressSystemBezel = defaults.bool(forKey: "hudSuppressSystemBezel")
         showOnAllDisplays = defaults.bool(forKey: "showOnAllDisplays")
+        showInScreenCapture = defaults.object(forKey: "showInScreenCapture") as? Bool ?? true
         launchAtLogin = SMAppService.mainApp.status == .enabled
+        notchNudge = defaults.double(forKey: "notchNudge")
+        snapZonesEnabled = defaults.bool(forKey: "snapZonesEnabled")
+        if let data = defaults.data(forKey: "snapLayouts"),
+           let decoded = try? JSONDecoder().decode([SnapLayout].self, from: data), !decoded.isEmpty {
+            snapLayouts = decoded
+        } else {
+            snapLayouts = [.leftHalf, .maximize, .rightHalf, .leftThird, .rightThird]
+        }
+        mediaHoverControls = defaults.object(forKey: "mediaHoverControls") as? Bool ?? true
+        mediaVisualization = defaults.string(forKey: "mediaVisualization") ?? "bars"
+        defaultModuleID = defaults.string(forKey: "module.default")
     }
 
     func isModuleEnabled(_ id: String) -> Bool {

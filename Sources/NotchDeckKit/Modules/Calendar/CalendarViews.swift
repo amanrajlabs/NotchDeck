@@ -9,8 +9,10 @@ final class CalendarModule: NotchModule, ObservableObject {
     let icon = "calendar"
     let hasPanel = true
     let source = CalendarSource()
+    weak var tasks: TasksModule?
 
     @Published var displayedMonth = Date()
+    @Published var searchText = ""
 
     var preferredHeight: CGFloat { 186 }
 
@@ -122,21 +124,48 @@ struct CalendarPanelView: View {
         }
     }
 
+    private var visibleEvents: [EventItem] {
+        source.events.filter {
+            EventSearch.matches(query: module.searchText, in: [$0.title])
+        }
+    }
+
+    private var overdueTasks: [TasksModule.TaskItem] {
+        guard let tasks = module.tasks else { return [] }
+        return tasks.items.filter { !$0.isCompleted && ($0.dueDate ?? .distantFuture) < Date() }
+    }
+
     private var agenda: some View {
-        Group {
-            if source.events.isEmpty {
-                Text("Nothing coming up")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ScrollView {
-                    VStack(spacing: 4) {
-                        ForEach(source.events) { event in
+        VStack(alignment: .leading, spacing: 6) {
+            TextField("Search events", text: $module.searchText)
+                .textFieldStyle(.roundedBorder)
+                .controlSize(.small)
+                .frame(maxWidth: 180)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 4) {
+                    if visibleEvents.isEmpty {
+                        Text(source.events.isEmpty ? "Nothing coming up" : "No matching events")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.tertiary)
+                    } else {
+                        ForEach(visibleEvents) { event in
                             EventRow(event: event)
                         }
                     }
+
+                    let overdue = overdueTasks
+                    if !overdue.isEmpty {
+                        SectionCaption(text: "Overdue reminders")
+                            .padding(.top, 4)
+                        ForEach(overdue.prefix(3)) { item in
+                            Label(item.title, systemImage: "exclamationmark.circle")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.orange)
+                        }
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }

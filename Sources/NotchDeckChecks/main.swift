@@ -44,6 +44,18 @@ expect(frame.size == CGSize(width: 640, height: 300), "panel frame takes expande
 let wide = NotchGeometry.panelFrame(notch: CGRect(x: 0, y: 950, width: 800, height: 32), expandedSize: CGSize(width: 640, height: 300))
 expect(wide.width == 800, "panel frame never narrower than notch")
 
+let nudged = NotchGeometry.notchRect(
+    screenFrame: screen, safeTopInset: 32, auxTopLeftWidth: 653, auxTopRightWidth: 653,
+    verticalNudge: 4
+)
+expect(nudged.maxY == screen.maxY, "nudge keeps rect pinned to top edge")
+expect(nudged.height == 28, "positive nudge shrinks height so bottom rises: \(nudged.height)")
+let overNudged = NotchGeometry.notchRect(
+    screenFrame: screen, safeTopInset: 32, auxTopLeftWidth: 653, auxTopRightWidth: 653,
+    verticalNudge: 100
+)
+expect(overNudged.height >= 8, "nudge clamps to minimum height")
+
 // MARK: - MediaStateMapper
 
 let spotifyInfo = MediaStateMapper.trackInfo(
@@ -372,6 +384,143 @@ let gridDays = MonthGrid.gridDays(for: july, calendar: calendar)
 expect(gridDays.count == 42, "month grid always 6 weeks")
 expect(calendar.component(.weekday, from: gridDays[0].date) == 2, "grid starts on Monday")
 expect(gridDays.filter(\.inMonth).count == 31, "July has 31 in-month days")
+
+// MARK: - SnapLayout
+
+let visible = CGRect(x: 0, y: 0, width: 1000, height: 800)
+expect(SnapLayout.leftHalf.frame(in: visible) == CGRect(x: 0, y: 0, width: 500, height: 800), "left half")
+expect(SnapLayout.rightHalf.frame(in: visible) == CGRect(x: 500, y: 0, width: 500, height: 800), "right half")
+expect(SnapLayout.maximize.frame(in: visible) == visible, "maximize fills visible frame")
+expect(SnapLayout.centerThird.frame(in: visible).minX.rounded() == 333, "center third x")
+expect(SnapLayout.topLeftQuarter.frame(in: visible) == CGRect(x: 0, y: 400, width: 500, height: 400), "top-left quarter (AppKit origin bottom-left → top row has higher y)")
+expect(SnapLayout.bottomRightQuarter.frame(in: visible) == CGRect(x: 500, y: 0, width: 500, height: 400), "bottom-right quarter")
+
+let strip = SnapZoneMath.stripFrame(notch: CGRect(x: 653, y: 950, width: 206, height: 32), tileCount: 5)
+expect(strip.midX == 756, "strip centered on notch: \(strip.midX)")
+expect(strip.maxY == 950, "strip hangs below the notch bottom")
+let tiles = SnapZoneMath.tileRects(strip: strip, count: 5)
+expect(tiles.count == 5, "one rect per tile")
+expect(tiles[0].minX >= strip.minX && tiles[4].maxX <= strip.maxX, "tiles fit inside strip")
+expect(SnapZoneMath.tileIndex(at: CGPoint(x: tiles[2].midX, y: tiles[2].midY), strip: strip, count: 5) == 2, "hit test middle tile")
+expect(SnapZoneMath.tileIndex(at: CGPoint(x: strip.minX - 50, y: strip.midY), strip: strip, count: 5) == nil, "miss outside strip")
+expect(SnapZoneMath.axPoint(fromCocoa: CGPoint(x: 10, y: 700), primaryScreenHeight: 800) == CGPoint(x: 10, y: 100), "cocoa→AX y-flip")
+
+// MARK: - KeyCombo
+
+// Cocoa flags: command = 1<<20, shift = 1<<17, option = 1<<19, control = 1<<18.
+expect(KeyCombo.carbonModifiers(fromCocoa: 1 << 20) == 256, "cmd → carbon cmdKey")
+expect(KeyCombo.carbonModifiers(fromCocoa: (1 << 20) | (1 << 17)) == 256 | 512, "cmd+shift")
+expect(KeyCombo.carbonModifiers(fromCocoa: (1 << 19) | (1 << 18)) == 2048 | 4096, "opt+ctrl")
+let combo = KeyCombo(keyCode: 45, carbonModifiers: 256 | 512) // ⇧⌘N
+expect(combo.display == "⇧⌘N", "display renders modifiers+key: \(combo.display)")
+let roundTrip = try? JSONDecoder().decode(KeyCombo.self, from: JSONEncoder().encode(combo))
+expect(roundTrip == combo, "KeyCombo codable round-trip")
+
+// MARK: - DropActionRunner (phase 5 actions)
+
+expect(
+    DropActionRunner.volumeRoot(for: URL(fileURLWithPath: "/Volumes/USB Stick/photos/a.jpg"))
+        == URL(fileURLWithPath: "/Volumes/USB Stick"),
+    "volume root extracted"
+)
+expect(DropActionRunner.volumeRoot(for: URL(fileURLWithPath: "/Users/x/a.txt")) == nil,
+       "non-volume path → nil")
+expect(DropActionRunner.volumeRoot(for: URL(fileURLWithPath: "/Volumes")) == nil,
+       "bare /Volumes → nil")
+expect(
+    DropActionRunner.iCloudDriveURL(home: URL(fileURLWithPath: "/Users/x")).path
+        == "/Users/x/Library/Mobile Documents/com~apple~CloudDocs",
+    "iCloud Drive path"
+)
+
+// unzip round-trip: zip a temp file, unzip it, expect the payload back.
+let tempDir = FileManager.default.temporaryDirectory
+    .appendingPathComponent("ndchecks-\(UUID().uuidString)")
+try! FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+let payload = tempDir.appendingPathComponent("hello.txt")
+try! "hello".write(to: payload, atomically: true, encoding: .utf8)
+if let archive = try? DropActionRunner.zip([payload]),
+   let extracted = try? DropActionRunner.unzip(archive) {
+    let inside = extracted.appendingPathComponent("hello.txt")
+    expect((try? String(contentsOf: inside, encoding: .utf8)) == "hello", "unzip restores payload")
+} else {
+    expect(false, "zip/unzip round-trip threw")
+}
+try? FileManager.default.removeItem(at: tempDir)
+
+// MARK: - LiveRotation
+
+expect(LiveRotation.pick(count: 0, tick: 7) == nil, "no sources → nil")
+expect(LiveRotation.pick(count: 3, tick: 0) == 0, "tick 0 → first")
+expect(LiveRotation.pick(count: 3, tick: 4) == 1, "wraps modulo count")
+
+// MARK: - EventSearch
+
+expect(EventSearch.matches(query: "", in: ["Standup"]), "empty query matches")
+expect(EventSearch.matches(query: "stand", in: ["Standup", nil]), "case-insensitive prefix")
+expect(EventSearch.matches(query: "CAFÉ", in: ["team cafe sync"]), "diacritic-insensitive")
+expect(!EventSearch.matches(query: "retro", in: ["Standup", "Room 4"]), "no match → false")
+
+// MARK: - DayTimeline
+
+let dtDayStart = Calendar.current.date(bySettingHour: 9, minute: 0, second: 0, of: Date())!
+let dtDayEnd = Calendar.current.date(bySettingHour: 18, minute: 0, second: 0, of: Date())!
+let dtNoon = Calendar.current.date(bySettingHour: 13, minute: 30, second: 0, of: Date())!
+expect(DayTimeline.fraction(of: dtNoon, dayStart: dtDayStart, dayEnd: dtDayEnd) == 0.5, "13:30 is halfway through 9–18")
+expect(DayTimeline.fraction(of: dtDayStart.addingTimeInterval(-60), dayStart: dtDayStart, dayEnd: dtDayEnd) == nil, "before start → nil")
+let dtBlocks = DayTimeline.blocks(
+    events: [(start: dtDayStart.addingTimeInterval(3_600), end: dtDayStart.addingTimeInterval(7_200)),
+             (start: dtDayEnd.addingTimeInterval(3_600), end: dtDayEnd.addingTimeInterval(7_200))],
+    dayStart: dtDayStart, dayEnd: dtDayEnd
+)
+expect(dtBlocks.count == 1, "out-of-range event dropped")
+expect(abs(dtBlocks[0].startFraction - 1.0 / 9.0) < 0.001, "block start fraction")
+
+// MARK: - TaskTrash
+
+let oldEntry = TrashedTask(id: "1", title: "old", deletedAt: Date(timeIntervalSinceNow: -31 * 86_400))
+let newEntry = TrashedTask(id: "2", title: "new", deletedAt: Date(timeIntervalSinceNow: -3_600))
+let kept = TaskTrash.pruned([oldEntry, newEntry], now: Date(), retentionDays: 30)
+expect(kept == [newEntry], "prune drops entries older than retention")
+expect(TaskTrash.pruned([], now: Date(), retentionDays: 30).isEmpty, "empty stays empty")
+
+// MARK: - AppCategory
+
+expect(AppCategory.categorize("com.apple.Safari") == "Browsing", "Safari → Browsing")
+expect(AppCategory.categorize("com.google.Chrome") == "Browsing", "Chrome → Browsing")
+expect(AppCategory.categorize("com.apple.dt.Xcode") == "Development", "Xcode → Development")
+expect(AppCategory.categorize("com.tinyspeck.slackmacgap") == "Communication", "Slack → Communication")
+expect(AppCategory.categorize("com.spotify.client") == "Media", "Spotify → Media")
+expect(AppCategory.categorize("com.unknown.thing") == "Other", "unknown → Other")
+let catTotals = AppCategory.totals([
+    UsageSlice(bundleID: "com.apple.Safari", seconds: 100),
+    UsageSlice(bundleID: "com.google.Chrome", seconds: 50),
+    UsageSlice(bundleID: "com.apple.dt.Xcode", seconds: 120),
+])
+expect(catTotals.first?.category == "Browsing" && catTotals.first?.seconds == 150,
+       "categories aggregate and sort: \(catTotals)")
+
+// MARK: - QuoteBook + ProfileSchedule
+
+expect(!QuoteBook.quotes.isEmpty, "quotes bundled")
+expect(QuoteBook.quote(dayOfYear: 1) == QuoteBook.quote(dayOfYear: 1), "stable per day")
+expect(QuoteBook.quote(dayOfYear: 400) == QuoteBook.quotes[400 % QuoteBook.quotes.count], "wraps")
+
+let rules = [
+    ProfileRule(minuteOfDay: 9 * 60, profile: "Work"),
+    ProfileRule(minuteOfDay: 18 * 60, profile: "Default"),
+]
+expect(ProfileSchedule.active(atMinuteOfDay: 10 * 60, rules: rules) == "Work", "10:00 → Work")
+expect(ProfileSchedule.active(atMinuteOfDay: 20 * 60, rules: rules) == "Default", "20:00 → Default")
+expect(ProfileSchedule.active(atMinuteOfDay: 3 * 60, rules: rules) == "Default", "03:00 wraps to yesterday's last rule")
+expect(ProfileSchedule.active(atMinuteOfDay: 600, rules: []) == nil, "no rules → nil")
+
+// MARK: - ModuleOrder
+
+expect(ModuleOrder.apply(order: ["b", "a"], to: ["a", "b", "c"]) == ["b", "a", "c"],
+       "saved order wins; unknown ids append")
+expect(ModuleOrder.apply(order: [], to: ["a", "b"]) == ["a", "b"], "no saved order → unchanged")
+expect(ModuleOrder.apply(order: ["x"], to: ["a"]) == ["a"], "stale ids ignored")
 
 // MARK: - Summary
 

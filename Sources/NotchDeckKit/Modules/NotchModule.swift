@@ -41,13 +41,16 @@ final class ModuleRegistry: ObservableObject {
     let settings: SettingsStore
     private(set) var modules: [any NotchModule] = []
     @Published private(set) var enabledIDs: Set<String> = []
+    @Published private(set) var orderVersion = 0
 
     init(settings: SettingsStore) {
         self.settings = settings
     }
 
     func register(_ newModules: [any NotchModule]) {
-        modules = newModules
+        let saved = UserDefaults.standard.stringArray(forKey: "module.order") ?? []
+        let orderedIDs = ModuleOrder.apply(order: saved, to: newModules.map(\.id))
+        modules = orderedIDs.compactMap { id in newModules.first { $0.id == id } }
         for module in modules where settings.isModuleEnabled(module.id) {
             module.activate()
             enabledIDs.insert(module.id)
@@ -72,5 +75,29 @@ final class ModuleRegistry: ObservableObject {
             guard enabledIDs.remove(id) != nil else { return }
             module.deactivate()
         }
+    }
+
+    /// Swaps the module at `id` with its neighbor `delta` positions away and
+    /// persists the new order so it survives relaunch.
+    func moveModule(_ id: String, by delta: Int) {
+        guard let index = modules.firstIndex(where: { $0.id == id }) else { return }
+        let target = index + delta
+        guard modules.indices.contains(target) else { return }
+        modules.swapAt(index, target)
+        UserDefaults.standard.set(modules.map(\.id), forKey: "module.order")
+        orderVersion += 1
+    }
+}
+
+/// Pure ordering helper: applies a saved id order to a list of ids, with
+/// unknown/missing ids kept in their relative position at the end.
+public enum ModuleOrder {
+    public static func apply(order: [String], to ids: [String]) -> [String] {
+        let position = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($1, $0) })
+        return ids.enumerated().sorted {
+            let a = position[$0.element] ?? order.count + $0.offset
+            let b = position[$1.element] ?? order.count + $1.offset
+            return a < b
+        }.map(\.element)
     }
 }

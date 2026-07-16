@@ -9,21 +9,32 @@ final class NotesModule: NotchModule, ObservableObject {
     let hasPanel = true
     var preferredHeight: CGFloat { 176 }
 
+    @Published var notes: [URL] = []
+    @Published var selected: URL?
     @Published var text: String = "" {
-        didSet { scheduleSave() }
+        didSet { if !isLoading { scheduleSave() } }
     }
+    /// Cached first-line titles, keyed by path, populated once per file in
+    /// `reloadList()` — the render path (sidebar, header badge) must never
+    /// hit disk, since `text` is `@Published` and re-renders on every
+    /// keystroke.
+    @Published private(set) var titles: [String: String] = [:]
 
+    private var isLoading = false
     private var saveTask: Task<Void, Never>?
 
-    private static var fileURL: URL {
+    private static var notesDir: URL {
         let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("NotchDeck", isDirectory: true)
+            .appendingPathComponent("NotchDeck/Notes", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("notes.txt")
+        return dir
     }
 
     func activate() {
-        text = (try? String(contentsOf: Self.fileURL, encoding: .utf8)) ?? ""
+        migrateLegacyNote()
+        reloadList()
+        if selected == nil { selected = notes.first }
+        load(selected)
     }
 
     func deactivate() {
@@ -34,8 +45,9 @@ final class NotesModule: NotchModule, ObservableObject {
 
     func headerBadge() -> AnyView? {
         let words = text.split(whereSeparator: \.isWhitespace).count
+        let noteTitle = selected.map { self.displayTitle(for: $0) } ?? "Notes"
         return AnyView(
-            Text("\(words) words")
+            Text("\(noteTitle) · \(words) words")
                 .font(.system(size: 10))
                 .foregroundStyle(.secondary)
         )
@@ -45,6 +57,91 @@ final class NotesModule: NotchModule, ObservableObject {
     func insert(_ snippet: String) {
         if !text.isEmpty, !text.hasSuffix("\n") { text += "\n" }
         text += snippet
+    }
+
+    // MARK: Multi-note management
+
+    private func migrateLegacyNote() {
+        let legacy = Self.notesDir.deletingLastPathComponent().appendingPathComponent("notes.txt")
+        let target = Self.notesDir.appendingPathComponent("Scratchpad.md")
+        if FileManager.default.fileExists(atPath: legacy.path),
+           !FileManager.default.fileExists(atPath: target.path) {
+            try? FileManager.default.moveItem(at: legacy, to: target)
+        }
+    }
+
+    private func reloadList() {
+        let urls = (try? FileManager.default.contentsOfDirectory(
+            at: Self.notesDir, includingPropertiesForKeys: [.contentModificationDateKey]
+        )) ?? []
+        notes = urls.filter { $0.pathExtension == "md" }.sorted {
+            let a = (try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            let b = (try? $1.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate) ?? .distantPast
+            return a > b
+        }
+        // Read each file's title once here, when the list changes — not on
+        // every render (see `displayTitle(for:)`).
+        var updated: [String: String] = [:]
+        for url in notes {
+            updated[url.path] = title(of: url)
+        }
+        titles = updated
+    }
+
+    func createNote() {
+        saveNow()
+        let url = DropActionRunner.uniqueURL(in: Self.notesDir, base: "Note", ext: "md")
+        try? "".write(to: url, atomically: true, encoding: .utf8)
+        reloadList()
+        select(url)
+    }
+
+    func deleteNote(_ url: URL) {
+        try? FileManager.default.trashItem(at: url, resultingItemURL: nil)
+        reloadList()
+        if selected == url {
+            selected = notes.first
+            load(selected)
+        }
+    }
+
+    func select(_ url: URL) {
+        guard url != selected else { return }
+        saveNow()
+        selected = url
+        load(url)
+    }
+
+    /// Reads `url` from disk to derive its title. Used by `reloadList()` to
+    /// populate the cache and by `saveNow()` to refresh it; NOT for the
+    /// render path (use `displayTitle(for:)` there — it never touches disk).
+    func title(of url: URL) -> String {
+        let content = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+        return Self.deriveTitle(content: content, url: url)
+    }
+
+    /// Title for the render path (sidebar rows, header badge): reads the
+    /// cache populated by `reloadList()`, except for the currently selected
+    /// note, whose title is derived live from the in-memory `text` so it
+    /// updates as the user types without a disk read.
+    func displayTitle(for url: URL) -> String {
+        if url == selected {
+            return Self.deriveTitle(content: text, url: url)
+        }
+        return titles[url.path] ?? url.deletingPathExtension().lastPathComponent
+    }
+
+    /// First non-empty line of `content`, else the filename — the shared
+    /// title rule.
+    private static func deriveTitle(content: String, url: URL) -> String {
+        let head = content.split(separator: "\n").first.map(String.init)
+        return (head?.isEmpty == false ? head! : url.deletingPathExtension().lastPathComponent)
+    }
+
+    private func load(_ url: URL?) {
+        isLoading = true
+        text = url.flatMap { try? String(contentsOf: $0, encoding: .utf8) } ?? ""
+        isLoading = false
     }
 
     private func scheduleSave() {
@@ -57,7 +154,9 @@ final class NotesModule: NotchModule, ObservableObject {
     }
 
     private func saveNow() {
-        try? text.write(to: Self.fileURL, atomically: true, encoding: .utf8)
+        guard let selected else { return }
+        try? text.write(to: selected, atomically: true, encoding: .utf8)
+        titles[selected.path] = Self.deriveTitle(content: text, url: selected)
     }
 }
 
@@ -75,7 +174,8 @@ struct NotesPanelView: View {
     ]
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
+        HStack(alignment: .top, spacing: 10) {
+            sidebar.frame(width: 120, alignment: .leading)
             toolbar.frame(width: 132)
             TextEditor(text: $module.text)
                 .font(.system(size: 11, design: .monospaced))
@@ -91,6 +191,23 @@ struct NotesPanelView: View {
                             .allowsHitTesting(false)
                     }
                 }
+        }
+    }
+
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Button { module.createNote() } label: {
+                Label("New note", systemImage: "plus").font(.system(size: 10))
+            }
+            .buttonStyle(.plain)
+            ForEach(module.notes, id: \.self) { url in
+                Text(module.displayTitle(for: url))
+                    .font(.system(size: 10, weight: url == module.selected ? .bold : .regular))
+                    .lineLimit(1)
+                    .onTapGesture { module.select(url) }
+                    .contextMenu { Button("Delete") { module.deleteNote(url) } }
+            }
+            Spacer()
         }
     }
 

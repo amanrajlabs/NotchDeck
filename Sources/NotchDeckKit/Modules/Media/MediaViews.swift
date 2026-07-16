@@ -35,15 +35,38 @@ final class MediaModule: NotchModule {
 
 struct MediaLiveActivityView: View {
     @ObservedObject var controller: MediaController
+    @State private var hovering = false
+    @AppStorage("mediaHoverControls") private var mediaHoverControls = true
+    @AppStorage("mediaVisualization") private var mediaVisualization = "bars"
 
     var body: some View {
         HStack(spacing: 8) {
             ArtworkView(image: controller.artwork, size: 20)
-            EqualizerBars(isPlaying: controller.track?.isPlaying == true)
-                .frame(width: 16, height: 14)
+            if hovering && mediaHoverControls {
+                HStack(spacing: 7) {
+                    Button { controller.previousTrack() } label: {
+                        Image(systemName: "backward.fill").font(.system(size: 9))
+                    }
+                    Button { controller.playPause() } label: {
+                        Image(systemName: controller.track?.isPlaying == true
+                              ? "pause.fill" : "play.fill").font(.system(size: 10))
+                    }
+                    Button { controller.nextTrack() } label: {
+                        Image(systemName: "forward.fill").font(.system(size: 9))
+                    }
+                }
+                .buttonStyle(.plain)
+            } else if mediaVisualization == "spectrum" {
+                SpectrumBars(isPlaying: controller.track?.isPlaying == true)
+                    .frame(width: 30, height: 14)
+            } else {
+                EqualizerBars(isPlaying: controller.track?.isPlaying == true)
+                    .frame(width: 16, height: 14)
+            }
         }
         .padding(.horizontal, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onHover { hovering = $0 }
     }
 }
 
@@ -256,6 +279,30 @@ struct EqualizerBars: View {
                         .fill(Color.green.opacity(0.7))
                         .frame(maxHeight: .infinity)
                         .scaleEffect(y: 0.25, anchor: .bottom)
+                }
+            }
+        }
+    }
+}
+
+/// Denser, center-weighted animated bars — a faux spectrum (no audio taps).
+/// Uses TimelineView like EqualizerBars used to before it moved to a
+/// CALayer-driven implementation; paused entirely while not playing so it
+/// costs zero CPU at idle.
+struct SpectrumBars: View {
+    let isPlaying: Bool
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 0.12, paused: !isPlaying)) { context in
+            let phase = context.date.timeIntervalSinceReferenceDate
+            HStack(alignment: .center, spacing: 1.5) {
+                ForEach(0..<12, id: \.self) { i in
+                    let center = abs(Double(i) - 5.5) / 5.5 // 0 at center, 1 at edges
+                    let wave = (sin(phase * 3 + Double(i) * 1.1) + 1) / 2
+                    let height = isPlaying ? 3 + wave * 11 * (1.1 - center) : 2
+                    Capsule()
+                        .fill(Theme.accent)
+                        .frame(width: 2, height: height)
                 }
             }
         }

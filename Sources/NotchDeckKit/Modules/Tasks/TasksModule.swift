@@ -15,12 +15,14 @@ final class TasksModule: NotchModule, ObservableObject {
         case all = "All"
         case active = "Active"
         case done = "Done"
+        case trash = "Trash"
 
         var icon: String {
             switch self {
             case .all: "tray.full"
             case .active: "circle"
             case .done: "checkmark.circle"
+            case .trash: "trash"
             }
         }
     }
@@ -34,6 +36,7 @@ final class TasksModule: NotchModule, ObservableObject {
 
     @Published private(set) var accessState: AccessState = .unknown
     @Published private(set) var items: [TaskItem] = []
+    @Published private(set) var trashed: [TrashedTask] = []
     @Published var filter: Filter = .active
     @Published var isAdding = false
 
@@ -42,11 +45,21 @@ final class TasksModule: NotchModule, ObservableObject {
     private let store = EKEventStore()
     private var changeObserver: NSObjectProtocol?
 
+    private static let retentionDays = 30
+
+    private static var trashURL: URL {
+        let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("NotchDeck", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("tasks-trash.json")
+    }
+
     var visibleItems: [TaskItem] {
         switch filter {
         case .all: items
         case .active: items.filter { !$0.isCompleted }
         case .done: items.filter(\.isCompleted)
+        case .trash: []
         }
     }
 
@@ -55,10 +68,12 @@ final class TasksModule: NotchModule, ObservableObject {
         case .all: items.count
         case .active: items.filter { !$0.isCompleted }.count
         case .done: items.filter(\.isCompleted).count
+        case .trash: trashed.count
         }
     }
 
     func activate() {
+        loadTrash()
         switch EKEventStore.authorizationStatus(for: .reminder) {
         case .fullAccess:
             accessState = .granted
@@ -160,6 +175,8 @@ final class TasksModule: NotchModule, ObservableObject {
     }
 
     func delete(_ item: TaskItem) {
+        trashed.insert(TrashedTask(id: item.id, title: item.title, deletedAt: Date()), at: 0)
+        saveTrash()
         guard let reminder = store.calendarItem(withIdentifier: item.id) as? EKReminder else { return }
         try? store.remove(reminder, commit: true)
         items.removeAll { $0.id == item.id }
@@ -173,6 +190,25 @@ final class TasksModule: NotchModule, ObservableObject {
         reminder.calendar = store.defaultCalendarForNewReminders()
         try? store.save(reminder, commit: true)
         refresh()
+    }
+
+    func restore(_ entry: TrashedTask) {
+        add(title: entry.title)
+        trashed.removeAll { $0.id == entry.id }
+        saveTrash()
+    }
+
+    private func loadTrash() {
+        let entries = (try? Data(contentsOf: Self.trashURL))
+            .flatMap { try? JSONDecoder().decode([TrashedTask].self, from: $0) } ?? []
+        trashed = TaskTrash.pruned(entries, now: Date(), retentionDays: Self.retentionDays)
+        saveTrash()
+    }
+
+    private func saveTrash() {
+        if let data = try? JSONEncoder().encode(trashed) {
+            try? data.write(to: Self.trashURL, options: .atomic)
+        }
     }
 }
 
@@ -263,7 +299,22 @@ struct TasksPanelView: View {
                         .controlSize(.small)
                 }
             }
-            if module.visibleItems.isEmpty {
+            if module.filter == .trash {
+                if module.trashed.isEmpty {
+                    Text("Trash is empty")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        VStack(spacing: 4) {
+                            ForEach(module.trashed) { entry in
+                                TrashRow(entry: entry, module: module)
+                            }
+                        }
+                    }
+                }
+            } else if module.visibleItems.isEmpty {
                 Text(module.filter == .done ? "Nothing completed recently" : "All clear 🎉")
                     .font(.system(size: 11))
                     .foregroundStyle(.tertiary)
@@ -329,6 +380,32 @@ struct TaskRow: View {
                 .buttonStyle(.plain)
                 .help("Delete")
             }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(hovering ? Theme.cardHover : Theme.card)
+        )
+        .onHover { hovering = $0 }
+    }
+}
+
+struct TrashRow: View {
+    let entry: TrashedTask
+    let module: TasksModule
+    @State private var hovering = false
+
+    var body: some View {
+        HStack {
+            Text(entry.title)
+                .font(.system(size: 11))
+                .strikethrough()
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+            Button("Restore") { module.restore(entry) }
+                .controlSize(.mini)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)

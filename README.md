@@ -35,9 +35,40 @@ Line Tools (no Xcode required).
 Browser/system media uses the vendored [mediaremote-adapter](Vendor/mediaremote-adapter)
 (BSD-3) hosted by /usr/bin/perl to pass the MediaRemote entitlement gate.
 
-Planned: widget dashboard (weather, quick toggles, profiles), system monitor,
-Pomodoro, Reminders tasks, notes (Phase 2); notifications strip, translation,
-GitHub PRs, Claude Code monitor (Phase 3). See `docs/superpowers/specs/`.
+## Features (Phase 5 — MacNotch parity)
+
+- **Window Snap Zones** — drag a window toward the top of the screen and a
+  tile strip drops from the notch (halves, thirds, quarters, maximize);
+  release over a tile to snap. Configurable layouts. Needs Accessibility.
+- **Keyboard shortcuts + snooze** — record global hotkeys (toggle notch,
+  next/previous module, snooze/wake); snooze hides the notch for a set
+  duration, also from the menu bar.
+- **Screen-capture hiding** — a General toggle removes the notch strip from
+  screenshots, recordings, and screen sharing.
+- **Notch nudge** — vertical alignment slider for displays where the notch
+  sits below the menu bar.
+- **Drop-to-act grid** — dragging files over the notch opens an action-tile
+  grid (Shelf, AirDrop, Zip, Unzip, convert, Move/Copy, Open With, Music,
+  Trash/Eject, iCloud Drive) with an Expand row.
+- **Rotating live activities** — the collapsed strip cycles media, timers,
+  calendar, Bluetooth, and an unread-notifications glance; HUD interrupts win.
+- **Media** — optional hover-reveal transport in the strip; Bars or Spectrum
+  visualization.
+- **Pomodoro** — completion sound + a "Timer done" pill.
+- **Calendar** — search events by title; overdue reminders section.
+- **Tasks** — delete to a 30-day Trash with restore.
+- **Day Progress** — a timeline of today's events with a bedtime marker.
+- **Screen Time** — dedicated module: category charts, ranked apps, and
+  app-switch counts.
+- **Notifications** — per-item dismiss and Clear All (local).
+- **Notes** — multiple notes with a sidebar; legacy scratchpad migrates in.
+- **Dashboard** — daily quote widget; time-based profile switching; an
+  opt-in camera "mirror" widget (needs Camera).
+- **Module management** — reorder modules and pick which opens by default.
+
+Planned features from Phases 2–3 (widget dashboard, system monitor, Pomodoro,
+tasks, notes, notifications, translation, PRs, Claude monitor) all shipped.
+See `docs/superpowers/specs/` and `docs/superpowers/plans/`.
 
 ## Build & run
 
@@ -55,12 +86,18 @@ swift run NotchDeckChecks
 ## Permissions
 
 Granted on first use: Automation (controlling Spotify/Music), Calendars,
-Notifications. The app is ad-hoc signed; grants persist per build signature.
+Notifications. Accessibility is required for Window Snap Zones (moving other
+apps' windows) and Camera for the opt-in Mirror widget — both off until you
+enable them. The app is ad-hoc signed; grants persist per build signature.
 
 ## Efficiency
 
 Event-driven throughout — no polling while collapsed except a 0.5 s brightness
-diff (HUD module only). Measured: ~0.1% CPU (idle or playing — equalizer runs in the window server via Core Animation), ~45 MB RSS.
+diff (HUD module only), a 6 s live-activity rotation tick and the Day Progress
+60 s tick (both SwiftUI-coalesced, only while their view is on screen), and an
+opt-in 60 s profile-switch timer that exists only when you configure schedule
+rules. Measured: ~0.1% CPU (idle or playing — equalizer runs in the window
+server via Core Animation), ~45 MB RSS.
 
 ## Requirements
 

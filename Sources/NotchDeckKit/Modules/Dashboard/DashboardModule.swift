@@ -22,6 +22,16 @@ final class DashboardModule: NotchModule, ObservableObject {
     @Published var activeProfile: String {
         didSet { UserDefaults.standard.set(activeProfile, forKey: "dashboard.profile") }
     }
+    /// Time-of-day → profile rules. Empty (default) means the feature is off — no timer runs.
+    @Published var scheduleRules: [ProfileRule] {
+        didSet {
+            if let data = try? JSONEncoder().encode(scheduleRules) {
+                UserDefaults.standard.set(data, forKey: "profile.schedule")
+            }
+            restartScheduleTimer()
+        }
+    }
+    private var scheduleTimer: Timer?
 
     static let profiles = ["Default", "Work", "Focus"]
     weak var registry: ModuleRegistry?
@@ -31,21 +41,53 @@ final class DashboardModule: NotchModule, ObservableObject {
     init() {
         launcherPaths = UserDefaults.standard.stringArray(forKey: "dashboard.launchers") ?? []
         activeProfile = UserDefaults.standard.string(forKey: "dashboard.profile") ?? "Default"
+        scheduleRules = (UserDefaults.standard.data(forKey: "profile.schedule"))
+            .flatMap { try? JSONDecoder().decode([ProfileRule].self, from: $0) } ?? []
     }
 
     func activate() {
         weather.activate()
         toggles.activate()
-        screenTime.activate()
+        // Ref-counted: ScreenTimeModule may also hold this tracker alive
+        // independently, so use retain()/release() rather than
+        // activate()/deactivate() directly (see AppUsageTracker).
+        screenTime.retain()
+        DashboardModuleShared.instance = self
+        restartScheduleTimer()
     }
 
     func deactivate() {
         weather.deactivate()
         toggles.deactivate()
-        screenTime.deactivate()
+        screenTime.release()
+        scheduleTimer?.invalidate()
+        scheduleTimer = nil
+    }
+
+    /// Restarts the 60 s schedule-check timer. Only runs while `scheduleRules` is non-empty —
+    /// this is an intentional, opt-in exception to the app's event-driven/minimal-timers rule.
+    private func restartScheduleTimer() {
+        scheduleTimer?.invalidate()
+        scheduleTimer = nil
+        guard !scheduleRules.isEmpty else { return }
+        scheduleTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
+            DispatchQueue.main.async {
+                MainActor.assumeIsolated {
+                    guard let self = DashboardModuleShared.instance else { return }
+                    let parts = Calendar.current.dateComponents([.hour, .minute], from: Date())
+                    let minute = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+                    if let wanted = ProfileSchedule.active(atMinuteOfDay: minute, rules: self.scheduleRules),
+                       wanted != self.activeProfile {
+                        self.switchProfile(to: wanted)
+                    }
+                }
+            }
+        }
     }
 
     func panelView() -> AnyView { AnyView(DashboardPanelView(module: self)) }
+
+    func settingsView() -> AnyView { AnyView(DashboardSettingsView(module: self)) }
 
     func headerBadge() -> AnyView? {
         AnyView(HeaderPill(text: activeProfile, icon: "person.crop.circle") { [weak self] in
@@ -73,6 +115,22 @@ final class DashboardModule: NotchModule, ObservableObject {
         let wanted = Set(saved + [Self.moduleID]) // never disable the dashboard itself
         for module in registry.modules {
             registry.setEnabled(module.id, wanted.contains(module.id))
+        }
+    }
+
+    // MARK: Schedule
+
+    /// Adjusts (or creates/removes) the schedule rule for `profile` by `minutes`.
+    /// Stepping below 0 removes the rule; capped at the last half-hour slot of the day.
+    func adjustRule(_ profile: String, by minutes: Int) {
+        if let index = scheduleRules.firstIndex(where: { $0.profile == profile }) {
+            var rule = scheduleRules[index]
+            let next = rule.minuteOfDay + minutes
+            if next < 0 { scheduleRules.remove(at: index); return }
+            rule.minuteOfDay = min(next, 23 * 60 + 30)
+            scheduleRules[index] = rule
+        } else {
+            scheduleRules.append(ProfileRule(minuteOfDay: max(0, minutes), profile: profile))
         }
     }
 
@@ -128,13 +186,17 @@ struct DashboardPanelView: View {
                 EventsWidget(source: module.calendarSource)
                 LauncherWidget(module: module, range: 0..<5, title: "Launcher")
                 PomodoroMiniWidget(pomodoro: module.pomodoro)
-                DayProgressWidget()
+                QuoteWidget()
             }
             GridRow {
                 QuickTogglesWidget(toggles: toggles)
                 ScreenTimeWidget(tracker: tracker)
                 ClockWeatherWidget(weather: weather, source: module.calendarSource)
-                LauncherWidget(module: module, range: 5..<10, title: "Actions")
+                if UserDefaults.standard.bool(forKey: "dashboard.mirror") {
+                    MirrorWidget()
+                } else {
+                    LauncherWidget(module: module, range: 5..<10, title: "Actions")
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -143,7 +205,7 @@ struct DashboardPanelView: View {
 }
 
 /// Uniform widget cell.
-private struct WidgetCell<Content: View>: View {
+struct WidgetCell<Content: View>: View {
     var title: String?
     var titleIcon: String?
     @ViewBuilder var content: Content
@@ -286,45 +348,17 @@ private struct PomodoroMiniContent: View {
     }
 }
 
-private struct DayProgressWidget: View {
-    @AppStorage("dayprogress.start") private var startHour = 9
-    @AppStorage("dayprogress.end") private var endHour = 18
-
+/// Deterministic per-day quote — see ``QuoteBook``. Day Progress moved to its own
+/// module (Task 15); this slot replaces the now-redundant DayProgressWidget.
+private struct QuoteWidget: View {
     var body: some View {
-        WidgetCell(title: "Day Progress", titleIcon: "chart.bar.fill") {
-            TimelineView(.periodic(from: .now, by: 60)) { context in
-                let fraction = DayProgress.fraction(
-                    now: context.date, startHour: startHour, endHour: endHour
-                )
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        if fraction == 1 {
-                            Label("Done", systemImage: "checkmark.circle.fill")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(.green)
-                        } else if let fraction {
-                            Text("\(Int(fraction * 100))%")
-                                .font(.system(size: 13, weight: .bold))
-                        } else {
-                            Text("Not started")
-                                .font(.system(size: 10))
-                                .foregroundStyle(.tertiary)
-                        }
-                        Spacer()
-                        Text("\(startHour):00 – \(endHour):00")
-                            .font(.system(size: 8))
-                            .foregroundStyle(.tertiary)
-                    }
-                    ProgressView(value: fraction ?? 0)
-                        .progressViewStyle(.linear)
-                        .tint(Theme.accent)
-                    if fraction == 1 {
-                        Text("— You showed up. That counts. —")
-                            .font(.system(size: 8))
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-            }
+        WidgetCell(title: "Quote", titleIcon: "quote.opening") {
+            let day = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 1
+            Text(QuoteBook.quote(dayOfYear: day))
+                .font(.system(size: 10))
+                .italic()
+                .foregroundStyle(.secondary)
+                .frame(maxHeight: .infinity, alignment: .center)
         }
     }
 }
@@ -496,6 +530,38 @@ struct UsageDonut: View {
                 Text(centerText)
                     .font(.system(size: 7, weight: .bold))
             }
+        }
+    }
+}
+
+@MainActor
+enum DashboardModuleShared {
+    weak static var instance: DashboardModule?
+}
+
+struct DashboardSettingsView: View {
+    @ObservedObject var module: DashboardModule
+
+    var body: some View {
+        Section("Dashboard profiles") {
+            ForEach(DashboardModule.profiles, id: \.self) { profile in
+                HStack {
+                    Text(profile)
+                    Spacer()
+                    let rule = module.scheduleRules.first { $0.profile == profile }
+                    Stepper(
+                        rule.map { String(format: "at %02d:%02d", $0.minuteOfDay / 60, $0.minuteOfDay % 60) } ?? "no schedule",
+                        onIncrement: { module.adjustRule(profile, by: 30) },
+                        onDecrement: { module.adjustRule(profile, by: -30) }
+                    )
+                }
+            }
+        }
+        Section("Dashboard widgets") {
+            Toggle("Mirror widget (camera) replaces Actions", isOn: Binding(
+                get: { UserDefaults.standard.bool(forKey: "dashboard.mirror") },
+                set: { UserDefaults.standard.set($0, forKey: "dashboard.mirror") }
+            ))
         }
     }
 }

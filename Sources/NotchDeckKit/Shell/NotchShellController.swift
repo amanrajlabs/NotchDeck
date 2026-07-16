@@ -13,6 +13,7 @@ final class NotchShellController {
         let vm: NotchViewModel
         var notchRect: CGRect
         var cancellable: AnyCancellable?
+        var snapCancellable: AnyCancellable?
         var shrinkTask: Task<Void, Never>?
         var keyObserver: NSObjectProtocol?
     }
@@ -21,6 +22,9 @@ final class NotchShellController {
     private let settings: SettingsStore
     private var moduleSet: ModuleSet?
     private var screenPanels: [ScreenPanel] = []
+    private var snapController: SnapZonesController?
+    private var snoozeTask: Task<Void, Never>?
+    private(set) var isSnoozed = false
 
     /// Extra width on each side of the notch reserved for live activities.
     static let stripSideMargin: CGFloat = 150
@@ -46,14 +50,82 @@ final class NotchShellController {
         modules.dashboard.pomodoro = modules.pomodoro
         modules.pomodoro.calendarSource = modules.calendar.source
         modules.pomodoro.tasks = modules.tasks
+        modules.dayProgress.calendarSource = modules.calendar.source
+        modules.dayProgress.tasks = modules.tasks
+        modules.calendar.tasks = modules.tasks
         registry.register(modules.all)
         rebuildPanels()
+
+        let snap = SnapZonesController(settings: settings)
+        snap.target = { [weak self] point in self?.snapTarget(near: point) }
+        snapController = snap
+        snap.syncEnabled()
+
+        ShortcutSettings.shared.rebindAll(shell: self)
+    }
+
+    /// Expands or collapses the first display's panel — used by the "toggle
+    /// notch" global shortcut.
+    func toggleFirstPanel() {
+        guard let entry = screenPanels.first else { return }
+        entry.vm.state == .expanded ? entry.vm.collapse() : entry.vm.expand()
+    }
+
+    /// Steps the expanded module forward/back through `registry.panelModules`
+    /// — used by the "next/prev module" global shortcuts.
+    func cycleModule(by delta: Int) {
+        guard let entry = screenPanels.first else { return }
+        let panels = registry.panelModules
+        guard !panels.isEmpty else { return }
+        let currentIndex = panels.firstIndex { $0.id == entry.vm.selectedModuleID } ?? 0
+        let next = (currentIndex + delta + panels.count) % panels.count
+        entry.vm.expand(showing: panels[next].id)
+    }
+
+    /// Hides all notch panels and schedules an automatic wake after
+    /// `minutes`.
+    func snooze(minutes: Int) {
+        isSnoozed = true
+        snoozeTask?.cancel()
+        for entry in screenPanels { entry.panel.orderOut(nil) }
+        snoozeTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(minutes * 60))
+            guard !Task.isCancelled else { return }
+            self?.wake()
+        }
+    }
+
+    /// Cancels any pending snooze wake and re-shows all notch panels.
+    func wake() {
+        snoozeTask?.cancel()
+        isSnoozed = false
+        for entry in screenPanels { entry.panel.orderFrontRegardless() }
+    }
+
+    /// The panel whose screen contains `point`, for the snap controller to
+    /// show tiles on and read the notch frame from.
+    func snapTarget(near point: CGPoint) -> (vm: NotchViewModel, notch: CGRect, screen: NSScreen)? {
+        for entry in screenPanels {
+            guard let screen = NSScreen.screens.first(where: { $0.frame.contains(point) })
+            else { continue }
+            if entry.notchRect.midX >= screen.frame.minX, entry.notchRect.midX <= screen.frame.maxX {
+                return (entry.vm, entry.notchRect, screen)
+            }
+        }
+        return nil
+    }
+
+    /// Pass-through so Settings can re-sync the drag monitor after the user
+    /// toggles Snap Zones or grants Accessibility.
+    func snapControllerSyncEnabled() {
+        snapController?.syncEnabled()
     }
 
     func rebuildPanels() {
         for entry in screenPanels {
             entry.shrinkTask?.cancel()
             entry.cancellable?.cancel()
+            entry.snapCancellable?.cancel()
             if let keyObserver = entry.keyObserver {
                 NotificationCenter.default.removeObserver(keyObserver)
             }
@@ -77,8 +149,10 @@ final class NotchShellController {
     private func addPanel(for screen: NSScreen, modules: ModuleSet) {
         let notchRect = Self.notchRect(for: screen)
         let vm = NotchViewModel(notchSize: notchRect.size)
+        vm.selectedModuleID = settings.defaultModuleID
 
         let panel = NotchPanel(frame: Self.stripFrame(notch: notchRect))
+        panel.sharingType = settings.showInScreenCapture ? .readOnly : .none
         panel.acceptsMouseMovedEvents = true
         let root = NotchRootView(vm: vm, registry: registry, modules: modules)
         let hosting = HoverHostingView(rootView: root)
@@ -136,8 +210,47 @@ final class NotchShellController {
                     }
                 }
             }
+        entry.snapCancellable = vm.$snapZones
+            .map { $0 != nil }
+            .removeDuplicates()
+            .sink { [weak self, weak panel, weak vm] visible in
+                guard let self, let panel else { return }
+                guard let index = self.screenPanels.firstIndex(where: { $0.panel === panel })
+                else { return }
+                self.screenPanels[index].shrinkTask?.cancel()
+                let notch = self.screenPanels[index].notchRect
+                let frame: CGRect
+                if visible {
+                    let count = vm?.snapZones?.count ?? self.settings.snapLayouts.count
+                    let strip = SnapZoneMath.stripFrame(notch: notch, tileCount: count)
+                    frame = NotchGeometry.panelFrame(
+                        notch: notch,
+                        expandedSize: CGSize(
+                            width: max(strip.width, notch.width + Self.stripSideMargin * 2),
+                            height: notch.height + strip.height
+                        )
+                    )
+                } else if vm?.state == .expanded {
+                    // Drag ended while the dashboard is open — restore the
+                    // expanded frame (matching the $state sink) so it isn't
+                    // clipped to strip size.
+                    frame = NotchGeometry.panelFrame(
+                        notch: notch,
+                        expandedSize: vm?.expandedSize ?? notch.size
+                    )
+                } else {
+                    frame = Self.stripFrame(notch: notch)
+                }
+                panel.setFrame(frame, display: true)
+            }
         screenPanels.append(entry)
-        panel.orderFrontRegardless()
+        // A rebuild (display reconfig, or toggling Nudge / screen-capture /
+        // all-displays while snoozed) must not defeat an active snooze — leave
+        // the panel hidden and let the pending `snoozeTask` re-show it on
+        // schedule via `wake()`.
+        if !isSnoozed {
+            panel.orderFrontRegardless()
+        }
     }
 
     private static func stripFrame(notch: CGRect) -> CGRect {
@@ -160,7 +273,8 @@ final class NotchShellController {
             screenFrame: screen.frame,
             safeTopInset: screen.safeAreaInsets.top,
             auxTopLeftWidth: hasNotch ? screen.auxiliaryTopLeftArea?.width : nil,
-            auxTopRightWidth: hasNotch ? screen.auxiliaryTopRightArea?.width : nil
+            auxTopRightWidth: hasNotch ? screen.auxiliaryTopRightArea?.width : nil,
+            verticalNudge: CGFloat(UserDefaults.standard.double(forKey: "notchNudge"))
         )
     }
 }

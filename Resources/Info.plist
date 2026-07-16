@@ -32,5 +32,7 @@
 	<string>NotchDeck shows battery levels of your Bluetooth devices.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
 	<string>NotchDeck shows and adds tasks from your Reminders.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>NotchDeck shows a quick mirror widget on the dashboard.</string>
 </dict>
 </plist>
