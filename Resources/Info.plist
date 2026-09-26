@@ -2,37 +2,37 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>CFBundleName</key>
-	<string>NotchDeck</string>
 	<key>CFBundleDisplayName</key>
 	<string>NotchDeck</string>
-	<key>CFBundleIdentifier</key>
-	<string>io.notchdeck.app</string>
 	<key>CFBundleExecutable</key>
+	<string>NotchDeck</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>io.github.amanrajlabs.notchdeck</string>
+	<key>CFBundleName</key>
 	<string>NotchDeck</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
-	<key>CFBundleIconFile</key>
-	<string>AppIcon</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.2.0</string>
+	<string>1.0.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>LSUIElement</key>
 	<true/>
-	<key>NSHighResolutionCapable</key>
-	<true/>
-	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>NotchDeck shows your upcoming events and meeting countdowns in the notch.</string>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>NotchDeck controls Spotify and Apple Music playback from the notch.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>NotchDeck shows battery levels of your Bluetooth devices.</string>
-	<key>NSRemindersFullAccessUsageDescription</key>
-	<string>NotchDeck shows and adds tasks from your Reminders.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>NotchDeck shows your upcoming events and meeting countdowns in the notch.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>NotchDeck shows a quick mirror widget on the dashboard.</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>NotchDeck shows and adds tasks from your Reminders.</string>
 </dict>
 </plist>

@@ -1,10 +1,19 @@
 # NotchDeck
 
-A native macOS notch productivity hub — a from-scratch replica of MacNotch
-(macnotch.io). Swift 6 + SwiftUI, no dependencies, built with only Command
+A native macOS notch productivity hub, inspired by [MacNotch](https://macnotch.io).
+Swift 6 + SwiftUI, no third-party Swift dependencies, buildable with only Command
 Line Tools (no Xcode required).
 
-## Features (Phase 1)
+macOS 14+ · Apple Silicon & Intel · no account, no analytics, no telemetry.
+
+**Network use:** the weather widget looks up your approximate location via
+ipinfo.io and fetches forecasts from open-meteo.com (turn it off in
+Settings → Dashboard widgets → Weather); album art is downloaded
+from the player's artwork URL; Translation calls OpenAI (or your local Ollama)
+and Pull Requests call GitHub/GitLab/Bitbucket — the last two only with keys
+you enter. Nothing else leaves your Mac.
+
+## Features
 
 - **Notch shell** — hover or click the notch to expand a dashboard; collapses
   back to the exact notch footprint. Works on notchless displays with a
@@ -35,7 +44,7 @@ Line Tools (no Xcode required).
 Browser/system media uses the vendored [mediaremote-adapter](Vendor/mediaremote-adapter)
 (BSD-3) hosted by /usr/bin/perl to pass the MediaRemote entitlement gate.
 
-## Features (Phase 5 — MacNotch parity)
+### More
 
 - **Window Snap Zones** — drag a window toward the top of the screen and a
   tile strip drops from the notch (halves, thirds, quarters, maximize);
@@ -66,22 +75,42 @@ Browser/system media uses the vendored [mediaremote-adapter](Vendor/mediaremote-
   opt-in camera "mirror" widget (needs Camera).
 - **Module management** — reorder modules and pick which opens by default.
 
-Planned features from Phases 2–3 (widget dashboard, system monitor, Pomodoro,
-tasks, notes, notifications, translation, PRs, Claude monitor) all shipped.
-See `docs/superpowers/specs/` and `docs/superpowers/plans/`.
+## Install
 
-## Build & run
+Download the latest `NotchDeck-x.y.z.zip` from
+[Releases](../../releases), unzip it, and drag **NotchDeck.app** to
+`/Applications`.
+
+### First launch: approving an unsigned app
+
+NotchDeck is **ad-hoc signed but not notarized** — I'm not enrolled in the
+$99/year Apple Developer Program. macOS therefore quarantines the download and
+refuses the first launch with *"Apple could not verify NotchDeck is free of
+malware."* This is Gatekeeper reporting the absence of a paid certificate, not
+a detection of anything.
+
+Approve it once, either way:
+
+**System Settings** — try to open NotchDeck, then go to
+Settings → Privacy & Security, scroll to *Security*, and click **Open Anyway**
+next to the NotchDeck message. Confirm with Touch ID.
+
+**Terminal** — strip the quarantine flag before the first launch:
 
 ```sh
-bash scripts/bundle.sh        # release build → dist/NotchDeck.app
-open dist/NotchDeck.app
+xattr -dr com.apple.quarantine /Applications/NotchDeck.app
 ```
 
-Checks (no XCTest under CLT, so tests are a plain executable):
+Prefer neither? [Build it from source](#build-from-source) — locally built
+apps are never quarantined.
 
-```sh
-swift run NotchDeckChecks
-```
+> **Updating:** because the app is ad-hoc signed, its code signature changes
+> with every build. macOS may stop trusting earlier permission grants
+> (Accessibility, Full Disk Access) after you replace the app. If a feature
+> stops working after an update, remove NotchDeck from that list with **−**,
+> then add it back with **+**. Tokens and API keys you enter are stored in
+> your login keychain; after an update macOS may ask once whether NotchDeck
+> can read them — choose **Always Allow**.
 
 ## Permissions
 
@@ -102,3 +131,27 @@ server via Core Animation), ~45 MB RSS.
 ## Requirements
 
 macOS 14+. Best on Macs with a notch (MacBook Pro 2021+, MacBook Air M2+).
+
+> **Private API notice:** system-wide now-playing info uses Apple's private
+> MediaRemote framework. A future macOS update may break it; Spotify and Music
+> keep working through their public scripting interfaces.
+
+## Build from source
+
+Command Line Tools are enough — no Xcode required:
+
+```sh
+./scripts/bundle.sh              # release build → dist/NotchDeck.app
+./scripts/bundle.sh universal    # arm64+x86_64  → dist/NotchDeck.app
+./scripts/release.sh             # universal zip → dist/NotchDeck-x.y.z.zip
+swift run NotchDeckChecks        # run the checks (no XCTest under CLT)
+```
+
+## Credits
+
+- [mediaremote-adapter](https://github.com/ungive/mediaremote-adapter) by
+  Jonas van den Berg — vendored in `Vendor/mediaremote-adapter`, BSD 3-Clause.
+
+## License
+
+[MIT](LICENSE). Vendored code keeps its own license.
