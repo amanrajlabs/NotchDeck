@@ -542,6 +542,12 @@ enum DashboardModuleShared {
 
 struct DashboardSettingsView: View {
     @ObservedObject var module: DashboardModule
+    @ObservedObject private var weather: WeatherService
+
+    init(module: DashboardModule) {
+        self.module = module
+        self.weather = module.weather
+    }
 
     var body: some View {
         Section("Dashboard profiles") {
@@ -559,6 +565,10 @@ struct DashboardSettingsView: View {
             }
         }
         Section("Dashboard widgets") {
+            Toggle("Weather (approximate location from your IP via ipinfo.io)", isOn: Binding(
+                get: { weather.isEnabled },
+                set: { weather.setEnabled($0) }
+            ))
             Toggle("Mirror widget (camera) replaces Actions", isOn: Binding(
                 get: { UserDefaults.standard.bool(forKey: "dashboard.mirror") },
                 set: { UserDefaults.standard.set($0, forKey: "dashboard.mirror") }

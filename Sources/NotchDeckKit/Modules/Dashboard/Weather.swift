@@ -51,12 +51,42 @@ public enum WeatherParser {
 
 @MainActor
 final class WeatherService: ObservableObject {
+    static let enabledKey = "dashboard.weather.enabled"
+
     @Published private(set) var snapshot: WeatherSnapshot?
     @Published private(set) var locationName: String?
+    /// Off → no requests to ipinfo.io or open-meteo.com at all.
+    @Published private(set) var isEnabled =
+        UserDefaults.standard.object(forKey: WeatherService.enabledKey) as? Bool ?? true
 
     private var refreshTask: Task<Void, Never>?
+    private var isActive = false
 
     func activate() {
+        isActive = true
+        startIfNeeded()
+    }
+
+    func deactivate() {
+        isActive = false
+        stop()
+    }
+
+    func setEnabled(_ enabled: Bool) {
+        guard enabled != isEnabled else { return }
+        isEnabled = enabled
+        UserDefaults.standard.set(enabled, forKey: Self.enabledKey)
+        if enabled {
+            startIfNeeded()
+        } else {
+            stop()
+            snapshot = nil
+            locationName = nil
+        }
+    }
+
+    private func startIfNeeded() {
+        guard isActive, isEnabled, refreshTask == nil else { return }
         refreshTask = Task { [weak self] in
             while !Task.isCancelled {
                 await self?.refresh()
@@ -65,7 +95,7 @@ final class WeatherService: ObservableObject {
         }
     }
 
-    func deactivate() {
+    private func stop() {
         refreshTask?.cancel()
         refreshTask = nil
     }
@@ -79,6 +109,7 @@ final class WeatherService: ObservableObject {
             let loc = ipJSON["loc"] as? String else { return }
         let parts = loc.split(separator: ",")
         guard parts.count == 2, let lat = Double(parts[0]), let lon = Double(parts[1]) else { return }
+        guard isEnabled else { return }
         locationName = ipJSON["city"] as? String
 
         var components = URLComponents(string: "https://api.open-meteo.com/v1/forecast")!
@@ -91,7 +122,7 @@ final class WeatherService: ObservableObject {
             URLQueryItem(name: "timezone", value: "auto"),
         ]
         guard let (data, _) = try? await URLSession.shared.data(from: components.url!) else { return }
-        if let parsed = WeatherParser.parse(data: data) {
+        if isEnabled, let parsed = WeatherParser.parse(data: data) {
             snapshot = parsed
         }
     }

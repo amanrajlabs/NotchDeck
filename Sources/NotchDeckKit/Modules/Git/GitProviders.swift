@@ -128,10 +128,10 @@ final class GitModule: NotchModule, ObservableObject {
     @Published private(set) var statusMessage: String?
 
     @Published var githubToken: String {
-        didSet { UserDefaults.standard.set(githubToken, forKey: "git.github.token") }
+        didSet { KeychainStore.set(githubToken, for: "git.github.token") }
     }
     @Published var gitlabToken: String {
-        didSet { UserDefaults.standard.set(gitlabToken, forKey: "git.gitlab.token") }
+        didSet { KeychainStore.set(gitlabToken, for: "git.gitlab.token") }
     }
     @Published var gitlabHost: String {
         didSet { UserDefaults.standard.set(gitlabHost, forKey: "git.gitlab.host") }
@@ -140,16 +140,16 @@ final class GitModule: NotchModule, ObservableObject {
         didSet { UserDefaults.standard.set(bitbucketUser, forKey: "git.bitbucket.user") }
     }
     @Published var bitbucketAppPassword: String {
-        didSet { UserDefaults.standard.set(bitbucketAppPassword, forKey: "git.bitbucket.password") }
+        didSet { KeychainStore.set(bitbucketAppPassword, for: "git.bitbucket.password") }
     }
 
     init() {
         let defaults = UserDefaults.standard
-        githubToken = defaults.string(forKey: "git.github.token") ?? ""
-        gitlabToken = defaults.string(forKey: "git.gitlab.token") ?? ""
+        githubToken = KeychainStore.migrateFromDefaults(key: "git.github.token")
+        gitlabToken = KeychainStore.migrateFromDefaults(key: "git.gitlab.token")
         gitlabHost = defaults.string(forKey: "git.gitlab.host") ?? "https://gitlab.com"
         bitbucketUser = defaults.string(forKey: "git.bitbucket.user") ?? ""
-        bitbucketAppPassword = defaults.string(forKey: "git.bitbucket.password") ?? ""
+        bitbucketAppPassword = KeychainStore.migrateFromDefaults(key: "git.bitbucket.password")
     }
 
     func activate() {}

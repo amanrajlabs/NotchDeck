@@ -50,7 +50,7 @@ final class TranslationModule: NotchModule, ObservableObject {
 
     // Settings-pane fields.
     @Published var openAIKey: String {
-        didSet { UserDefaults.standard.set(openAIKey, forKey: "translation.openai.key") }
+        didSet { KeychainStore.set(openAIKey, for: "translation.openai.key") }
     }
     @Published var ollamaURL: String {
         didSet { UserDefaults.standard.set(ollamaURL, forKey: "translation.ollama.url") }
@@ -63,7 +63,7 @@ final class TranslationModule: NotchModule, ObservableObject {
         let defaults = UserDefaults.standard
         targetLanguage = defaults.string(forKey: "translation.target") ?? "English"
         engine = Engine(rawValue: defaults.string(forKey: "translation.engine") ?? "") ?? .openAI
-        openAIKey = defaults.string(forKey: "translation.openai.key") ?? ""
+        openAIKey = KeychainStore.migrateFromDefaults(key: "translation.openai.key")
         ollamaURL = defaults.string(forKey: "translation.ollama.url") ?? "http://localhost:11434"
         ollamaModel = defaults.string(forKey: "translation.ollama.model") ?? "llama3.2"
     }

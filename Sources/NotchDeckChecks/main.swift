@@ -643,6 +643,40 @@ expect(ModuleOrder.apply(order: ["b", "a"], to: ["a", "b", "c"]) == ["b", "a", "
 expect(ModuleOrder.apply(order: [], to: ["a", "b"]) == ["a", "b"], "no saved order → unchanged")
 expect(ModuleOrder.apply(order: ["x"], to: ["a"]) == ["a"], "stale ids ignored")
 
+// MARK: - KeychainStore
+
+do {
+    let service = "io.github.amanrajlabs.notchdeck.checks"
+    let account = "check-\(UUID().uuidString)"
+    let suite = "io.github.amanrajlabs.notchdeck.checks"
+    let defaults = UserDefaults(suiteName: suite)!
+    defer {
+        KeychainStore.delete(account, service: service)
+        defaults.removePersistentDomain(forName: suite)
+    }
+
+    expect(KeychainStore.string(for: account, service: service) == nil, "missing secret → nil")
+    expect(KeychainStore.set("tok-1", for: account, service: service), "keychain set succeeds")
+    expect(KeychainStore.string(for: account, service: service) == "tok-1", "keychain read back")
+    expect(KeychainStore.set("tok-2", for: account, service: service), "keychain overwrite succeeds")
+    expect(KeychainStore.string(for: account, service: service) == "tok-2", "overwrite wins")
+    expect(KeychainStore.set("", for: account, service: service), "empty value deletes")
+    expect(KeychainStore.string(for: account, service: service) == nil, "deleted secret → nil")
+
+    defaults.set("legacy-secret", forKey: account)
+    expect(KeychainStore.migrateFromDefaults(key: account, defaults: defaults, service: service) == "legacy-secret",
+           "migration returns the existing secret")
+    expect(defaults.object(forKey: account) == nil, "migration removes the plaintext copy")
+    expect(KeychainStore.string(for: account, service: service) == "legacy-secret", "migration stores it in the keychain")
+    expect(KeychainStore.migrateFromDefaults(key: account, defaults: defaults, service: service) == "legacy-secret",
+           "later launches read the keychain")
+
+    defaults.set("", forKey: "empty-\(account)")
+    expect(KeychainStore.migrateFromDefaults(key: "empty-\(account)", defaults: defaults, service: service) == "",
+           "empty legacy value → empty string")
+    expect(defaults.object(forKey: "empty-\(account)") == nil, "empty legacy value is cleaned up")
+}
+
 // MARK: - Summary
 
 if failures == 0 {
